@@ -420,6 +420,33 @@ function saveWatchlist() {
 }
 
 // =========================================================
+//  HELPERS — Range Bar
+// =========================================================
+/**
+ * Build a visual day-range progress bar HTML.
+ * prefix: 'card' or 'd' (for display cards)
+ */
+function buildRangeBar(price, low, high, prefix = 'card') {
+  const range = high - low;
+  if (range <= 0) return '';
+  const pct = Math.min(Math.max(((price - low) / range) * 100, 0), 100);
+  const lowFmt  = price < 100 ? low.toFixed(2)  : low.toFixed(0);
+  const highFmt = price < 100 ? high.toFixed(2) : high.toFixed(0);
+  return `
+    <div class="${prefix}-range-bar-wrap" aria-label="Day range: low $${lowFmt}, current $${price.toFixed(2)}, high $${highFmt}">
+      <div class="${prefix}-range-labels">
+        <span>$${lowFmt}</span>
+        <span style="color:var(--text-secondary);font-size:0.6rem;">Day Range</span>
+        <span>$${highFmt}</span>
+      </div>
+      <div class="${prefix}-range-track">
+        <div class="${prefix}-range-fill" style="width:${pct.toFixed(1)}%"></div>
+        <div class="${prefix}-range-thumb" style="left:${pct.toFixed(1)}%"></div>
+      </div>
+    </div>`;
+}
+
+// =========================================================
 //  RENDERING — Stock Card Grid
 // =========================================================
 function renderGrid() {
@@ -447,6 +474,11 @@ function renderGrid() {
     card.setAttribute('aria-label', `${ticker} ${d.name} ${formatPrice(d.price)} ${up ? 'up' : 'down'} ${formatChange(d.change, d.pct)}. Press Enter to view chart.`);
     card.dataset.ticker = ticker;
     card.dataset.trend = up ? 'up' : 'down';
+    // Day range bar (only when we have day high/low from live data or use today's sparkline range)
+    const dayH = d.dayHigh || d.high52;
+    const dayL = d.dayLow  || d.low52;
+    const dayRangeBar = (dayH && dayL && dayH > dayL) ? buildRangeBar(d.price, dayL, dayH, 'card') : '';
+
     card.innerHTML = `
       <div class="card-top">
         <div>
@@ -459,6 +491,7 @@ function renderGrid() {
         <span class="card-price live-pulse">${formatPrice(d.price)}</span>
         <span class="card-change ${up ? 'up' : 'down'}">${trendArrowSVG(up)}${formatChange(d.change, d.pct)}</span>
       </div>
+      ${dayRangeBar}
       <div class="card-sparkline" id="spark-${ticker}"></div>
       <div class="card-metrics">
         <div class="card-metric"><span class="card-metric-label">Vol</span><span class="card-metric-value">${vol}</span></div>
@@ -553,7 +586,7 @@ function renderDisplaySparkline(ticker) {
 
   const chart = LightweightCharts.createChart(el, {
     width: el.clientWidth || 200,
-    height: 48,
+    height: 56,
     layout: { background: { type: 'solid', color: 'transparent' }, textColor: 'transparent' },
     grid: { vertLines: { visible: false }, horzLines: { visible: false } },
     crosshair: { mode: 0 },
@@ -565,7 +598,7 @@ function renderDisplaySparkline(ticker) {
 
   const series = chart.addAreaSeries({
     lineColor: up ? 'rgba(0,214,114,0.9)' : 'rgba(255,71,87,0.9)',
-    topColor:    up ? 'rgba(0,214,114,0.2)' : 'rgba(255,71,87,0.2)',
+    topColor:    up ? 'rgba(0,214,114,0.25)' : 'rgba(255,71,87,0.25)',
     bottomColor: 'transparent',
     lineWidth: 2,
     crosshairMarkerVisible: false,
@@ -880,16 +913,27 @@ function renderDisplayGrid() {
     const vol = typeof d.volume === 'string' ? d.volume : formatBigNumber(d.volume);
     const mcap = typeof d.cap === 'string' ? d.cap : formatBigNumber(d.cap);
 
+    // Day range bar for display card
+    const dayH = d.dayHigh || null;
+    const dayL = d.dayLow  || null;
+    const dRangeBar = (dayH && dayL && dayH > dayL) ? buildRangeBar(d.price, dayL, dayH, 'd') : '';
+
     const card = document.createElement('div');
     card.className = `display-card ${i === 0 ? 'active' : ''}`;
     card.dataset.idx = i;
+    card.dataset.trend = up ? 'up' : 'down';
     card.innerHTML = `
       <div class="d-ticker">${ticker}</div>
       <div class="d-company">${d.name}</div>
       <div class="d-price" style="color:${up ? 'var(--green)' : 'var(--red)'}">${formatPrice(d.price)}</div>
-      <div class="d-change ${up ? 'up' : 'down'}">${formatChange(d.change, d.pct)}</div>
+      <div class="d-change ${up ? 'up' : 'down'}">${trendArrowSVG(up)}${formatChange(d.change, d.pct)}</div>
       <div class="d-sparkline" id="dspark-${ticker}"></div>
-      <div class="d-metrics">Vol ${vol} &middot; Cap ${mcap}</div>
+      ${dRangeBar}
+      <div class="d-metrics">
+        <span>Vol&nbsp;${vol}</span>
+        <span>&middot;</span>
+        <span>Cap&nbsp;${mcap}</span>
+      </div>
     `;
     dg.appendChild(card);
   }

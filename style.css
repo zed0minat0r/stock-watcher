@@ -28,6 +28,21 @@
 
 html { scroll-behavior: smooth; overflow-x: hidden; }
 
+/* ===== SUBTLE GRID DOT BACKGROUND ===== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(37, 48, 64, 0.55) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+#app-header, .ticker-tape-wrapper, #dashboard, .modal, .display-overlay {
+  position: relative;
+  z-index: 1;
+}
+
 /* Skip-to-content link (a11y) */
 .skip-to-content {
   position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
@@ -555,6 +570,11 @@ body {
   opacity: 0.75;
 }
 
+@media (max-width: 600px) {
+  .card-live-badge { text-align: center; }
+  .card-range-bar-wrap { text-align: left; }
+}
+
 /* ===== LIVE DATA PULSE ===== */
 @keyframes livePulse {
   0%, 100% { opacity: 1; }
@@ -620,6 +640,7 @@ body {
   display: flex;
   gap: 6px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 .tr-btn {
   padding: 8px 14px;
@@ -685,10 +706,33 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  padding-top: 24px;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center;
   transition: border-color 0.6s ease, box-shadow 0.6s ease, transform 0.6s ease, background 0.6s ease, opacity 0.6s ease;
   opacity: 0.75;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Trend accent bar on display cards — matches main card premium styling */
+.display-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  transition: background 0.6s ease, box-shadow 0.6s ease;
+}
+.display-card[data-trend="up"]::before {
+  background: linear-gradient(90deg, var(--green-dim), var(--green));
+  box-shadow: 0 1px 12px rgba(0, 214, 114, 0.25);
+}
+.display-card[data-trend="down"]::before {
+  background: linear-gradient(90deg, var(--red-dim), var(--red));
+  box-shadow: 0 1px 12px rgba(255, 71, 87, 0.25);
 }
 .display-card.active {
   border-color: var(--blue);
@@ -699,10 +743,26 @@ body {
   opacity: 1;
   animation: activeGlow 3s ease-in-out infinite;
 }
+.display-card[data-trend="up"].active {
+  box-shadow: 0 0 32px rgba(78,168,246,0.18), 0 0 24px rgba(0,214,114,0.14), inset 0 0 20px rgba(78,168,246,0.06);
+  animation: activeGlowUp 3s ease-in-out infinite;
+}
+.display-card[data-trend="down"].active {
+  box-shadow: 0 0 32px rgba(78,168,246,0.18), 0 0 24px rgba(255,71,87,0.14), inset 0 0 20px rgba(78,168,246,0.06);
+  animation: activeGlowDown 3s ease-in-out infinite;
+}
 
 @keyframes activeGlow {
   0%, 100% { box-shadow: 0 0 32px rgba(78,168,246,0.22), inset 0 0 20px rgba(78,168,246,0.06); }
   50% { box-shadow: 0 0 48px rgba(78,168,246,0.35), inset 0 0 28px rgba(78,168,246,0.10); }
+}
+@keyframes activeGlowUp {
+  0%, 100% { box-shadow: 0 0 32px rgba(78,168,246,0.18), 0 0 24px rgba(0,214,114,0.14), inset 0 0 20px rgba(78,168,246,0.06); }
+  50% { box-shadow: 0 0 48px rgba(78,168,246,0.28), 0 0 36px rgba(0,214,114,0.22), inset 0 0 28px rgba(78,168,246,0.10); }
+}
+@keyframes activeGlowDown {
+  0%, 100% { box-shadow: 0 0 32px rgba(78,168,246,0.18), 0 0 24px rgba(255,71,87,0.14), inset 0 0 20px rgba(78,168,246,0.06); }
+  50% { box-shadow: 0 0 48px rgba(78,168,246,0.28), 0 0 36px rgba(255,71,87,0.22), inset 0 0 28px rgba(78,168,246,0.10); }
 }
 
 .display-card .d-ticker { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.3px; }
@@ -717,15 +777,102 @@ body {
 .display-card .d-change.down { color: #ffb8bf; background: #3d1520; }
 .display-card .d-sparkline {
   width: 100%;
-  height: 48px;
-  margin-top: 8px;
+  height: 56px;
+  margin-top: 10px;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .display-card .d-metrics {
   margin-top: 8px; font-size: 0.78rem; color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Day range bar — a visual bar showing current price between day low/high */
+.d-range-bar-wrap {
+  width: 100%;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+.d-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.d-range-track {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.d-range-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--gradient-brand);
+}
+.d-range-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 1px solid var(--bg-primary);
+  z-index: 2;
+}
+
+/* Card day range bar (main card) */
+.card-range-bar-wrap {
+  width: 100%;
+  margin-top: 2px;
+}
+.card-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.card-range-track {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: visible;
+  position: relative;
+}
+.card-range-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--gradient-brand);
+}
+.card-range-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 1px solid var(--bg-card);
+  z-index: 2;
 }
 
 .display-footer {
@@ -831,7 +978,7 @@ body {
   .display-card .d-ticker { font-size: 1.2rem; }
   .display-card .d-company { font-size: 0.72rem; }
   .display-card .d-change { font-size: 0.9rem; padding: 2px 8px; }
-  .display-card .d-sparkline { height: 36px; }
+  .display-card .d-sparkline { height: 40px; }
   .display-card .d-metrics { font-size: 0.68rem; }
   .display-footer { padding-top: 8px; gap: 8px; font-size: 0.75rem; flex-wrap: wrap; }
   #exit-display-btn { padding: 6px 12px; font-size: 0.8rem; }
