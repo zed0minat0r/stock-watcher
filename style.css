@@ -287,6 +287,13 @@ body {
 .ticker-tape-item .tape-arrow {
   font-size: 0.7rem;
 }
+.ticker-tape-item .tape-live-dot {
+  font-size: 0.55rem;
+  color: var(--green);
+  opacity: 0.8;
+  vertical-align: middle;
+  margin-left: 2px;
+}
 
 /* ===== AUTOCOMPLETE DROPDOWN ===== */
 .search-autocomplete {
@@ -572,7 +579,7 @@ body {
 
 @media (max-width: 600px) {
   .card-live-badge { text-align: center; }
-  .card-range-bar-wrap { text-align: left; }
+  .card-range-bar-wrap { text-align: center; width: 100%; }
 }
 
 /* ===== LIVE DATA PULSE ===== */
@@ -914,7 +921,7 @@ body {
 /* ===== TOAST ===== */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%) translateY(80px);
   background: var(--bg-card);

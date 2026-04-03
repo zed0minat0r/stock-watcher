@@ -9,7 +9,11 @@ const REFRESH_INTERVAL = 60_000;        // 1 min
 const DISPLAY_ROTATE_INTERVAL = 10_000; // 10 sec
 
 // ---- MARKET INDICES FOR TICKER TAPE ----
-const MARKET_INDICES = [
+// Fetchable ETF proxies: SPY (S&P 500), DIA (Dow), QQQ (Nasdaq), IWM (Russell 2000)
+// Non-fetchable (Finnhub free tier): VIX, DXY, Gold, Crude — kept as static fallback
+const TAPE_ETF_SYMBOLS = ['SPY', 'DIA', 'QQQ', 'IWM'];
+const TAPE_ETF_LABELS  = { SPY: 'S&P 500', DIA: 'Dow Jones', QQQ: 'Nasdaq', IWM: 'Russell 2000' };
+const MARKET_INDICES_FALLBACK = [
   { symbol: 'SPY',  label: 'S&P 500',      price: 5672.80, change: 18.42,  pct: 0.33  },
   { symbol: 'DIA',  label: 'Dow Jones',     price: 42156.30, change: -52.70, pct: -0.13 },
   { symbol: 'QQQ',  label: 'Nasdaq',        price: 19823.45, change: 95.12,  pct: 0.48  },
@@ -19,6 +23,8 @@ const MARKET_INDICES = [
   { symbol: 'GC=F', label: 'Gold',          price: 2345.80, change: 12.60,  pct: 0.54  },
   { symbol: 'CL=F', label: 'Crude Oil',     price: 78.42,   change: -0.86,  pct: -1.08 },
 ];
+// Live tape data — populated by fetchLiveTapeData()
+let _liveTapeIndices = null;
 
 // Finnhub API — swap key or provider here
 const API_CONFIG = {
@@ -256,6 +262,7 @@ async function fetchCandleData(ticker, days = 90, mode = 'candle') {
         high: +json.h[i].toFixed(2),
         low: +json.l[i].toFixed(2),
         close: +json.c[i].toFixed(2),
+        volume: json.v ? json.v[i] : 0,
       });
     }
 
@@ -704,10 +711,33 @@ function renderModalChart(ticker, days) {
     borderUpColor: '#00d672', borderDownColor: '#ff4757',
     wickUpColor: '#00d672', wickDownColor: '#ff4757',
   });
+
+  // Volume histogram series — rendered on a separate scale overlay
+  const volumeSeries = modalChart.addHistogramSeries({
+    color: 'rgba(78,168,246,0.2)',
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+    lastValueVisible: false,
+    priceLineVisible: false,
+  });
+  modalChart.priceScale('volume').applyOptions({
+    scaleMargins: { top: 0.80, bottom: 0 },
+    visible: false,
+  });
+
   // Fetch real historical candle data
   fetchCandleData(ticker, days, 'candle').then(data => {
     if (data && data.length > 0 && modalChart) {
       candleSeries.setData(data);
+      // Feed volume data with directional color (up=green, down=red) at 20% opacity
+      const volData = data
+        .filter(d => d.volume > 0)
+        .map(d => ({
+          time: d.time,
+          value: d.volume,
+          color: d.close >= d.open ? 'rgba(0,214,114,0.20)' : 'rgba(255,71,87,0.20)',
+        }));
+      if (volData.length > 0) volumeSeries.setData(volData);
       modalChart.timeScale().fitContent();
       // --- Accessibility: generate sr-only text summary of the chart ---
       generateChartA11ySummary(ticker, days, data);
@@ -1267,36 +1297,68 @@ refreshTimer = setInterval(() => loadAndRender(), REFRESH_INTERVAL);
 setInterval(updateMarketStatus, 30_000);
 
 // =========================================================
-//  TICKER TAPE — scrolling market indices banner
+//  TICKER TAPE — scrolling market indices banner (live ETF data)
 // =========================================================
-function renderTickerTape() {
+
+/**
+ * Fetch live quotes for tape ETFs (SPY/DIA/QQQ/IWM) from Finnhub.
+ * Returns array in same shape as MARKET_INDICES_FALLBACK for the 4 ETFs,
+ * or null on failure so caller falls back to static data.
+ */
+async function fetchLiveTapeData() {
+  try {
+    const results = await Promise.all(
+      TAPE_ETF_SYMBOLS.map(async (symbol) => {
+        const url = `${API_CONFIG.baseUrl}/quote?symbol=${encodeURIComponent(symbol)}&token=${API_CONFIG.finnhubKey}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const q = await res.json();
+        if (!q || !q.c || q.c <= 0) throw new Error(`No data for ${symbol}`);
+        return {
+          symbol,
+          label: TAPE_ETF_LABELS[symbol],
+          price:  q.c,
+          change: q.d  || 0,
+          pct:    q.dp || 0,
+          live:   true,
+        };
+      })
+    );
+    // Merge live ETF results with static non-fetchable items (VIX, DXY, Gold, Oil)
+    const staticItems = MARKET_INDICES_FALLBACK.filter(i => !TAPE_ETF_SYMBOLS.includes(i.symbol));
+    return [...results, ...staticItems];
+  } catch (err) {
+    console.warn('Live tape fetch failed, using static data:', err.message);
+    return null;
+  }
+}
+
+function renderTickerTape(indices) {
   const tape = document.getElementById('ticker-tape');
   if (!tape) return;
-
-  // Add small jitter to simulate live data
-  const indices = MARKET_INDICES.map(idx => {
-    const jitter = (Math.random() - 0.5) * 0.4;
-    const price = +(idx.price + jitter).toFixed(2);
-    const change = +(idx.change + jitter * 0.1).toFixed(2);
-    const pct = +((change / (price - change)) * 100).toFixed(2);
-    return { ...idx, price, change, pct };
-  });
 
   // Build items HTML — duplicate for seamless loop
   const buildItems = () => indices.map(idx => {
     const up = idx.change >= 0;
     const sign = up ? '+' : '';
     const arrow = up ? '\u25B2' : '\u25BC';
+    const liveIndicator = idx.live ? ' <span class="tape-live-dot">&#9679;</span>' : '';
     return `<div class="ticker-tape-item">
       <span class="tape-label">${idx.label}</span>
       <span class="tape-price">${idx.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-      <span class="tape-change ${up ? 'up' : 'down'}"><span class="tape-arrow">${arrow}</span> ${sign}${idx.pct.toFixed(2)}%</span>
+      <span class="tape-change ${up ? 'up' : 'down'}"><span class="tape-arrow">${arrow}</span> ${sign}${idx.pct.toFixed(2)}%</span>${liveIndicator}
     </div>`;
   }).join('');
 
   tape.innerHTML = buildItems() + buildItems();
 }
 
-renderTickerTape();
-// Refresh ticker tape data every 30 seconds
-setInterval(renderTickerTape, 30_000);
+async function refreshTape() {
+  const live = await fetchLiveTapeData();
+  _liveTapeIndices = live || MARKET_INDICES_FALLBACK;
+  renderTickerTape(_liveTapeIndices);
+}
+
+refreshTape();
+// Refresh ticker tape data every 60 seconds (align with main data refresh)
+setInterval(refreshTape, 60_000);
