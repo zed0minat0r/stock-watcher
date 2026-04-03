@@ -135,21 +135,68 @@ body {
 
 /* ===== STOCK CARD ===== */
 .stock-card {
-  background: var(--bg-card);
+  background: linear-gradient(145deg, var(--bg-card) 0%, rgba(22, 29, 39, 0.85) 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 18px;
+  padding-top: 20px;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+  transition: background var(--transition), border-color var(--transition), transform var(--transition), box-shadow 0.3s ease;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
+
+/* Premium top accent bar — color set by JS via data attribute */
+.stock-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.stock-card[data-trend="up"]::before {
+  background: linear-gradient(90deg, var(--green-dim), var(--green));
+  box-shadow: 0 1px 8px rgba(0, 214, 114, 0.15);
+}
+.stock-card[data-trend="down"]::before {
+  background: linear-gradient(90deg, var(--red-dim), var(--red));
+  box-shadow: 0 1px 8px rgba(255, 71, 87, 0.15);
+}
+
+/* Inner glow highlight */
+.stock-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+  pointer-events: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
 .stock-card:hover {
-  background: var(--bg-hover);
+  background: linear-gradient(145deg, var(--bg-hover) 0%, rgba(28, 37, 51, 0.9) 100%);
   border-color: var(--text-muted);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.03);
+}
+.stock-card[data-trend="up"]:hover {
+  border-color: var(--green-dim);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(0, 214, 114, 0.06);
+}
+.stock-card[data-trend="down"]:hover {
+  border-color: var(--red-dim);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 71, 87, 0.06);
 }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; }

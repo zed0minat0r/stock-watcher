@@ -313,6 +313,7 @@ function renderGrid() {
     const card = document.createElement('div');
     card.className = 'stock-card';
     card.dataset.ticker = ticker;
+    card.dataset.trend = up ? 'up' : 'down';
     card.innerHTML = `
       <div class="card-top">
         <div>

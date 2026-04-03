@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.0 — 2026-04-01
+
+### Premium Glassmorphism Stock Cards (Spark)
+- **Frosted glass card effect**: Cards now use a gradient background with backdrop-filter blur for a premium layered look
+- **Directional accent bar**: Each card has a top accent bar that glows green (stock up) or red (stock down) for instant at-a-glance trend status
+- **Elevated hover states**: Cards lift with a refined shadow and subtle directional color glow on hover matching the stock's trend
+- **Inner light gradient**: A soft top highlight on every card adds depth and dimensionality
+- All changes are CSS-only with a single JS data-attribute addition — no new dependencies
+
 ## v1.0.0 — 2026-04-01
 
 ### Initial Release — StockPulse Market Dashboard
