@@ -1,5 +1,29 @@
 # Changelog
 
+## v2.0.0 — 2026-04-01
+
+### Major Visual Overhaul — Trading Floor Energy (Builder)
+- **Header redesign**: Larger, bolder "StockPulse" logo with green-to-blue gradient text and
+  animated pulsing logo icon. Market open/closed badge now more prominent with glowing dot
+  indicator (pulsing when market is open).
+- **Scrolling ticker tape**: New horizontal market summary banner below header showing S&P 500,
+  Dow Jones, Nasdaq, Russell 2000, VIX, US Dollar, Gold, and Crude Oil with real-time prices,
+  directional arrows, and % changes. Auto-scrolls continuously like a financial terminal.
+  Refreshes every 30 seconds with price jitter for live feel.
+- **Bigger sparklines**: Card sparkline charts increased from 48px to 80px tall for much better
+  trend visibility at a glance.
+- **Trend arrows**: Up/down SVG arrow icons added to each stock card's change badge for instant
+  directional clarity.
+- **Larger price display**: Card price font bumped to 1.8rem/900 weight (from 1.55rem/800) for
+  more prominent pricing. Prices have a subtle pulse animation to convey live data.
+- **Trend gradient backgrounds**: Stock cards now have a subtle directional gradient background —
+  green tint for gainers, red tint for losers — giving instant visual grouping.
+- **Card entrance animations**: Staggered slide-up animation when cards load, creating a dynamic
+  cascade effect instead of static appearance.
+- **Enhanced card hover**: Deeper lift (3px), stronger glow effects on hover.
+- Professional Bloomberg/Robinhood aesthetic. Mobile-first, center-aligned. All animations
+  respect `prefers-reduced-motion`.
+
 ## v1.7.0 — 2026-04-01
 
 ### Visual Energy & Personality Overhaul (Spark)

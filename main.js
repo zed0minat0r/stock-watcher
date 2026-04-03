@@ -8,6 +8,18 @@ const LS_KEY = 'stockpulse_watchlist';
 const REFRESH_INTERVAL = 60_000;        // 1 min
 const DISPLAY_ROTATE_INTERVAL = 10_000; // 10 sec
 
+// ---- MARKET INDICES FOR TICKER TAPE ----
+const MARKET_INDICES = [
+  { symbol: 'SPY',  label: 'S&P 500',      price: 5672.80, change: 18.42,  pct: 0.33  },
+  { symbol: 'DIA',  label: 'Dow Jones',     price: 42156.30, change: -52.70, pct: -0.13 },
+  { symbol: 'QQQ',  label: 'Nasdaq',        price: 19823.45, change: 95.12,  pct: 0.48  },
+  { symbol: 'IWM',  label: 'Russell 2000',  price: 2078.60, change: -8.35,  pct: -0.40 },
+  { symbol: 'VIX',  label: 'VIX',           price: 16.82,   change: -0.45,  pct: -2.61 },
+  { symbol: 'DXY',  label: 'US Dollar',     price: 104.28,  change: 0.18,   pct: 0.17  },
+  { symbol: 'GC=F', label: 'Gold',          price: 2345.80, change: 12.60,  pct: 0.54  },
+  { symbol: 'CL=F', label: 'Crude Oil',     price: 78.42,   change: -0.86,  pct: -1.08 },
+];
+
 // Finnhub API — swap key or provider here
 const API_CONFIG = {
   provider: 'finnhub',
@@ -318,6 +330,13 @@ function formatChange(change, pct) {
 
 function isUp(change) { return change >= 0; }
 
+function trendArrowSVG(up) {
+  if (up) {
+    return `<span class="trend-arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 2L10 7H2L6 2Z" fill="currentColor"/></svg></span>`;
+  }
+  return `<span class="trend-arrow"><svg viewBox="0 0 12 12" fill="none"><path d="M6 10L2 5H10L6 10Z" fill="currentColor"/></svg></span>`;
+}
+
 function updateTimestamp(mode) {
   const el = $('#last-updated');
   if (!el) return;
@@ -410,8 +429,8 @@ function renderGrid() {
         <button class="card-remove" data-ticker="${ticker}" title="Remove">&times;</button>
       </div>
       <div class="card-price-row">
-        <span class="card-price">${formatPrice(d.price)}</span>
-        <span class="card-change ${up ? 'up' : 'down'}">${formatChange(d.change, d.pct)}</span>
+        <span class="card-price live-pulse">${formatPrice(d.price)}</span>
+        <span class="card-change ${up ? 'up' : 'down'}">${trendArrowSVG(up)}${formatChange(d.change, d.pct)}</span>
       </div>
       <div class="card-sparkline" id="spark-${ticker}"></div>
       <div class="card-metrics">
@@ -464,7 +483,7 @@ function renderSparkline(ticker) {
 
   const chart = LightweightCharts.createChart(el, {
     width: el.clientWidth,
-    height: 48,
+    height: 80,
     layout: { background: { type: 'solid', color: 'transparent' }, textColor: 'transparent' },
     grid: { vertLines: { visible: false }, horzLines: { visible: false } },
     crosshair: { mode: 0 },
@@ -1027,3 +1046,38 @@ refreshTimer = setInterval(() => loadAndRender(), REFRESH_INTERVAL);
 
 // Update market status every 30 seconds
 setInterval(updateMarketStatus, 30_000);
+
+// =========================================================
+//  TICKER TAPE — scrolling market indices banner
+// =========================================================
+function renderTickerTape() {
+  const tape = document.getElementById('ticker-tape');
+  if (!tape) return;
+
+  // Add small jitter to simulate live data
+  const indices = MARKET_INDICES.map(idx => {
+    const jitter = (Math.random() - 0.5) * 0.4;
+    const price = +(idx.price + jitter).toFixed(2);
+    const change = +(idx.change + jitter * 0.1).toFixed(2);
+    const pct = +((change / (price - change)) * 100).toFixed(2);
+    return { ...idx, price, change, pct };
+  });
+
+  // Build items HTML — duplicate for seamless loop
+  const buildItems = () => indices.map(idx => {
+    const up = idx.change >= 0;
+    const sign = up ? '+' : '';
+    const arrow = up ? '\u25B2' : '\u25BC';
+    return `<div class="ticker-tape-item">
+      <span class="tape-label">${idx.label}</span>
+      <span class="tape-price">${idx.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+      <span class="tape-change ${up ? 'up' : 'down'}"><span class="tape-arrow">${arrow}</span> ${sign}${idx.pct.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+
+  tape.innerHTML = buildItems() + buildItems();
+}
+
+renderTickerTape();
+// Refresh ticker tape data every 30 seconds
+setInterval(renderTickerTape, 30_000);

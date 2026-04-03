@@ -13,7 +13,7 @@
   <header id="app-header">
     <div class="header-row">
       <div class="header-left">
-        <h1 class="logo"><span class="logo-icon">&#9670;</span> StockPulse</h1>
+        <h1 class="logo"><span class="logo-icon">&#9670;</span> <span class="logo-text">StockPulse</span></h1>
         <span class="market-status" id="market-status"></span>
       </div>
       <div class="header-right">
@@ -31,6 +31,11 @@
       </form>
     </div>
   </header>
+
+  <!-- Market Summary Ticker Tape -->
+  <div class="ticker-tape-wrapper" id="ticker-tape-wrapper" aria-label="Market indices ticker tape">
+    <div class="ticker-tape" id="ticker-tape"></div>
+  </div>
 
   <!-- Main dashboard -->
   <main id="dashboard">
@@ -62,7 +67,7 @@
   <!-- Display mode overlay -->
   <div id="display-overlay" class="display-overlay hidden">
     <div class="display-header">
-      <h1 class="logo"><span class="logo-icon">&#9670;</span> StockPulse</h1>
+      <h1 class="logo"><span class="logo-icon">&#9670;</span> <span class="logo-text">StockPulse</span></h1>
       <div class="display-controls">
         <span class="market-status" id="display-market-status"></span>
         <span id="display-clock"></span>
