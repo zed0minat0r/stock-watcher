@@ -575,7 +575,11 @@ function renderModalChart(ticker, days) {
     height: 350,
     layout: { background: { type: 'solid', color: '#111820' }, textColor: '#8b949e' },
     grid: { vertLines: { color: '#1a2030' }, horzLines: { color: '#1a2030' } },
-    crosshair: { mode: 0 },
+    crosshair: {
+      mode: 1,
+      vertLine: { color: 'rgba(78,168,246,0.4)', width: 1, style: 2, labelBackgroundColor: '#253040' },
+      horzLine: { color: 'rgba(78,168,246,0.4)', width: 1, style: 2, labelBackgroundColor: '#253040' },
+    },
     rightPriceScale: { borderColor: '#253040' },
     timeScale: { borderColor: '#253040' },
   });
@@ -594,6 +598,39 @@ function renderModalChart(ticker, days) {
     }
   });
 
+  // Crosshair tooltip for OHLC data
+  const tooltip = document.getElementById('chart-tooltip');
+  modalChart.subscribeCrosshairMove((param) => {
+    if (!param || !param.time || !param.seriesData || param.seriesData.size === 0) {
+      tooltip.style.display = 'none';
+      return;
+    }
+    const d = param.seriesData.get(candleSeries);
+    if (!d) { tooltip.style.display = 'none'; return; }
+    const dateStr = typeof param.time === 'string' ? param.time :
+      `${param.time.year}-${String(param.time.month).padStart(2,'0')}-${String(param.time.day).padStart(2,'0')}`;
+    const change = d.close - d.open;
+    const pct = d.open !== 0 ? ((change / d.open) * 100).toFixed(2) : '0.00';
+    const color = change >= 0 ? 'var(--green)' : 'var(--red)';
+    const sign = change >= 0 ? '+' : '';
+    tooltip.innerHTML =
+      `<div class="tt-date">${dateStr}</div>` +
+      `<div class="tt-row"><span>O</span><span>${d.open.toFixed(2)}</span></div>` +
+      `<div class="tt-row"><span>H</span><span>${d.high.toFixed(2)}</span></div>` +
+      `<div class="tt-row"><span>L</span><span>${d.low.toFixed(2)}</span></div>` +
+      `<div class="tt-row" style="color:${color}"><span>C</span><span>${d.close.toFixed(2)}</span></div>` +
+      `<div class="tt-change" style="color:${color}">${sign}${change.toFixed(2)} (${sign}${pct}%)</div>`;
+    tooltip.style.display = 'block';
+
+    // Position tooltip near the cursor but within the modal
+    const containerRect = container.getBoundingClientRect();
+    const x = param.point.x;
+    const tooltipWidth = 140;
+    const left = x > containerRect.width / 2 ? x - tooltipWidth - 12 : x + 12;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = '8px';
+  });
+
   // Resize handler
   const onResize = () => {
     if (modalChart) modalChart.applyOptions({ width: container.clientWidth });
@@ -605,6 +642,8 @@ function renderModalChart(ticker, days) {
 function closeModal() {
   modal.classList.add('hidden');
   currentModalTicker = null;
+  const tooltip = document.getElementById('chart-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
   if (modalChart) { try { modalChart.remove(); } catch {} modalChart = null; }
   if (modal._resizeHandler) {
     window.removeEventListener('resize', modal._resizeHandler);

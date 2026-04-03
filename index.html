@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js" defer></script>
 </head>
 <body>
+  <a href="#stock-grid" class="skip-to-content">Skip to content</a>
   <!-- Header -->
   <header id="app-header">
     <div class="header-row">
@@ -60,7 +61,10 @@
         <button class="tr-btn" data-days="180" role="radio" aria-checked="false">6M</button>
         <button class="tr-btn" data-days="365" role="radio" aria-checked="false">1Y</button>
       </div>
-      <div id="chart-container"></div>
+      <div id="chart-wrap" style="position:relative;">
+        <div id="chart-container"></div>
+        <div id="chart-tooltip" class="chart-tooltip" aria-hidden="true"></div>
+      </div>
     </div>
   </div>
 

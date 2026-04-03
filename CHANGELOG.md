@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.1.0 — 2026-04-01
+
+### Refiner — Chart Crosshair, Accessibility & Polish
+- **Crosshair + OHLC tooltip on modal charts**: Enabled `CrosshairMode.Normal` on the
+  candlestick chart modal. Hovering/touching the chart now shows a blue crosshair with price and
+  date axis labels. A floating tooltip displays Open, High, Low, Close and day change with
+  color-coded percentages. Users can finally inspect specific prices and dates — the #1 audit
+  recommendation.
+- **Skip-to-content link**: Added a visually-hidden skip link as the first focusable element in
+  the page. Pressing Tab reveals a blue "Skip to content" bar that jumps focus directly to the
+  stock grid, addressing the #3 audit recommendation for screen reader accessibility.
+- **Crosshair styling**: Subtle blue crosshair lines (dashed, 40% opacity) with dark label
+  backgrounds match the app's dark fintech aesthetic. Tooltip uses backdrop-filter blur and
+  tabular-nums for clean number alignment.
+
 ## v2.0.1 — 2026-04-01
 
 ### Mobile Audit @ 375px (Pixel)
