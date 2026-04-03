@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.6.0 — 2026-04-01
+
+### QA Bug Fixes: Overflow, Contrast & Chart Modal (Builder)
+- **Fix: Horizontal overflow at 375px** — Reduced mobile header button sizes (40px), tightened
+  gaps and padding, added flex-shrink rules so the logo side compresses gracefully. Added
+  `overflow-x: hidden` on `html` and `max-width: 100%` on header row as safety nets. Toast
+  max-width capped at `calc(100vw - 32px)`. Display mode padding reduced on mobile.
+- **Fix: WCAG contrast on gain/loss badges** — Card change badges now use high-contrast
+  light text (`#e6fff2` on green bg, `#ffe6e9` on red bg) instead of colored text on matching
+  tinted backgrounds (~1:1 ratio). Market status badge uses `#2cff8e`/`#ffa3ac` for open/closed
+  states with stronger background opacity (0.15). All pass WCAG AA 4.5:1 minimum.
+- **Fix: Chart modal click handler** — Added `pointer-events: none` to `.card-sparkline` so
+  the LightweightCharts canvas no longer intercepts clicks meant for the stock card. Card
+  click-to-open-modal now works reliably on all devices.
+
 ## v1.5.1 — 2026-04-01
 
 ### Display Mode Card Transitions (Spark)
