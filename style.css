@@ -1031,8 +1031,8 @@ body {
   .sort-btn[data-mobile-label]::after { content: attr(data-mobile-label); font-size: 0.72rem; }
   .stock-grid { gap: 10px; }
   .stock-card { padding: 16px 14px; text-align: center; align-items: center; }
-  .card-top { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px; position: relative; }
-  .card-top .card-remove { top: -4px; right: -4px; }
+  .card-top { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px; }
+  .card-remove { top: 8px; right: 8px; }
   .card-price-row { justify-content: center; }
   .card-metrics { justify-items: center; }
   .card-price { font-size: 1.5rem; }
