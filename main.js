@@ -64,6 +64,7 @@ let displayIndex = 0;
 let refreshTimer = null;
 let sparklineCharts = {};   // ticker -> chart instance
 let currentModalTicker = null;
+let currentSort = 'default'; // active sort mode
 
 // ---- DOM REFS ----
 const $ = (sel) => document.querySelector(sel);
@@ -454,9 +455,77 @@ function buildRangeBar(price, low, high, prefix = 'card') {
 }
 
 // =========================================================
+//  SORT HELPERS
+// =========================================================
+function getSortedWatchlist() {
+  const list = [...watchlist];
+  switch (currentSort) {
+    case 'change-desc':
+      return list.sort((a, b) => (stockData[b]?.pct ?? 0) - (stockData[a]?.pct ?? 0));
+    case 'change-asc':
+      return list.sort((a, b) => (stockData[a]?.pct ?? 0) - (stockData[b]?.pct ?? 0));
+    case 'price-desc':
+      return list.sort((a, b) => (stockData[b]?.price ?? 0) - (stockData[a]?.price ?? 0));
+    case 'alpha':
+      return list.sort((a, b) => a.localeCompare(b));
+    default:
+      return list;
+  }
+}
+
+// Wire up sort buttons
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentSort = btn.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+      b.setAttribute('aria-checked', b === btn ? 'true' : 'false');
+    });
+    renderGrid();
+  });
+});
+
+// =========================================================
+//  PORTFOLIO SUMMARY STRIP
+// =========================================================
+function renderPortfolioSummary() {
+  const el = document.getElementById('portfolio-summary');
+  if (!el) return;
+  const tickers = watchlist.filter(t => stockData[t]);
+  if (tickers.length === 0) { el.innerHTML = ''; return; }
+  const gainers = tickers.filter(t => stockData[t].change >= 0).length;
+  const losers  = tickers.length - gainers;
+  const topGainer = tickers.reduce((best, t) => {
+    if (!best || stockData[t].pct > stockData[best].pct) return t;
+    return best;
+  }, null);
+  const topLoser = tickers.reduce((worst, t) => {
+    if (!worst || stockData[t].pct < stockData[worst].pct) return t;
+    return worst;
+  }, null);
+  const tg = topGainer ? stockData[topGainer] : null;
+  const tl = topLoser  ? stockData[topLoser]  : null;
+
+  el.innerHTML = `
+    <span class="ps-item ps-gainers">
+      <span class="ps-dot ps-dot-up"></span>
+      <span class="ps-val">${gainers}</span> gainer${gainers !== 1 ? 's' : ''}
+    </span>
+    <span class="ps-sep">·</span>
+    <span class="ps-item ps-losers">
+      <span class="ps-dot ps-dot-down"></span>
+      <span class="ps-val">${losers}</span> loser${losers !== 1 ? 's' : ''}
+    </span>
+    ${tg ? `<span class="ps-sep">·</span><span class="ps-item ps-best">Best: <strong>${topGainer}</strong> <span style="color:var(--green)">+${tg.pct.toFixed(2)}%</span></span>` : ''}
+    ${tl && losers > 0 ? `<span class="ps-sep">·</span><span class="ps-item ps-worst">Worst: <strong>${topLoser}</strong> <span style="color:var(--red)">${tl.pct.toFixed(2)}%</span></span>` : ''}
+  `;
+}
+
+// =========================================================
 //  RENDERING — Stock Card Grid
 // =========================================================
 function renderGrid() {
+  renderPortfolioSummary();
   if (watchlist.length === 0) {
     grid.innerHTML = `<div class="empty-state"><h3>No stocks in your watchlist</h3><p>Use the search bar to add tickers.</p></div>`;
     return;
@@ -467,7 +536,8 @@ function renderGrid() {
   sparklineCharts = {};
 
   grid.innerHTML = '';
-  for (const ticker of watchlist) {
+  const sortedList = getSortedWatchlist();
+  for (const ticker of sortedList) {
     const d = stockData[ticker];
     if (!d) continue;
     const up = isUp(d.change);
@@ -535,7 +605,7 @@ function renderGrid() {
 
   // Render sparklines after DOM paint
   requestAnimationFrame(() => {
-    for (const ticker of watchlist) {
+    for (const ticker of sortedList) {
       renderSparkline(ticker);
     }
   });
@@ -670,14 +740,14 @@ async function openModal(ticker) {
     return `<div class="modal-metric"><div class="modal-metric-label">${label}</div><div class="modal-metric-value" ${s}>${val}</div></div>`;
   }).join('');
 
-  // Reset timerange buttons
+  // Reset timerange buttons — default to 3M (90 days) for meaningful chart view
   $$('.tr-btn').forEach(b => {
     const isActive = b.dataset.days === '90';
     b.classList.toggle('active', isActive);
     b.setAttribute('aria-checked', isActive ? 'true' : 'false');
   });
 
-  renderModalChart(ticker, 90);
+  renderModalChart(ticker, 90); // 3M default
   modal.classList.remove('hidden');
 
   // Focus trap: move focus to close button
@@ -1064,6 +1134,20 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'r' && document.activeElement !== searchInput && modal.classList.contains('hidden')) {
     e.preventDefault();
     loadAndRender();
+  }
+  // Arrow keys in display mode — navigate cards
+  if (!displayOverlay.classList.contains('hidden')) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const pageSize = Math.min(watchlist.length - displayPage * DISPLAY_PAGE_SIZE, DISPLAY_PAGE_SIZE);
+      displayIndex = (displayIndex + 1) % pageSize;
+      highlightDisplayCard();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const pageSize = Math.min(watchlist.length - displayPage * DISPLAY_PAGE_SIZE, DISPLAY_PAGE_SIZE);
+      displayIndex = (displayIndex - 1 + pageSize) % pageSize;
+      highlightDisplayCard();
+    }
   }
 });
 

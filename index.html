@@ -40,6 +40,17 @@
 
   <!-- Main dashboard -->
   <main id="dashboard">
+    <div id="portfolio-summary" class="portfolio-summary" aria-live="polite"></div>
+    <div id="dashboard-toolbar" class="dashboard-toolbar">
+      <span class="toolbar-label">Sort by</span>
+      <div class="sort-btns" role="radiogroup" aria-label="Sort stocks by">
+        <button class="sort-btn active" data-sort="default" role="radio" aria-checked="true">Default</button>
+        <button class="sort-btn" data-sort="change-desc" role="radio" aria-checked="false">Top Gainers</button>
+        <button class="sort-btn" data-sort="change-asc" role="radio" aria-checked="false">Top Losers</button>
+        <button class="sort-btn" data-sort="price-desc" role="radio" aria-checked="false">Price ↓</button>
+        <button class="sort-btn" data-sort="alpha" role="radio" aria-checked="false">A–Z</button>
+      </div>
+    </div>
     <div id="stock-grid" class="stock-grid" aria-live="polite" aria-relevant="additions removals"></div>
   </main>
 
@@ -55,9 +66,9 @@
       </div>
       <div id="modal-metrics" class="modal-metrics"></div>
       <div id="chart-timerange" class="chart-timerange" role="radiogroup" aria-label="Chart time range">
-        <button class="tr-btn active" data-days="5" role="radio" aria-checked="true">1W</button>
+        <button class="tr-btn" data-days="5" role="radio" aria-checked="false">1W</button>
         <button class="tr-btn" data-days="30" role="radio" aria-checked="false">1M</button>
-        <button class="tr-btn" data-days="90" role="radio" aria-checked="false">3M</button>
+        <button class="tr-btn active" data-days="90" role="radio" aria-checked="true">3M</button>
         <button class="tr-btn" data-days="180" role="radio" aria-checked="false">6M</button>
         <button class="tr-btn" data-days="365" role="radio" aria-checked="false">1Y</button>
       </div>
@@ -86,6 +97,7 @@
         <button class="display-page-btn" id="display-next-btn" aria-label="Next page">Next &rarr;</button>
       </div>
       <span id="display-rotate-label">Auto-rotating every 10s</span>
+      <span class="display-kbd-hint" aria-hidden="true">&#8592; &#8594; to navigate</span>
       <div id="display-dots" class="display-dots"></div>
     </div>
   </div>
