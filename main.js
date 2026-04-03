@@ -11,7 +11,7 @@ const DISPLAY_ROTATE_INTERVAL = 10_000; // 10 sec
 // Finnhub API — swap key or provider here
 const API_CONFIG = {
   provider: 'finnhub',
-  finnhubKey: 'demo',   // Replace with your free Finnhub key from https://finnhub.io/
+  finnhubKey: 'd77hb59r01qp6afll3j0d77hb59r01qp6afll3jg',   // Replace with your free Finnhub key from https://finnhub.io/
   baseUrl: 'https://finnhub.io/api/v1',
 };
 
@@ -65,10 +65,20 @@ const displayOverlay = $('#display-overlay');
  * Returns { ticker: { name, price, change, pct, volume, cap, high52, low52 } }
  */
 async function fetchStockData(tickers) {
+  let data = {};
   try {
-    const data = await fetchFromFinnhub(tickers);
+    data = await fetchFromFinnhub(tickers);
     if (data && Object.keys(data).length > 0) {
       updateTimestamp();
+      // For tickers Finnhub didn't return, try fallback (known tickers only)
+      const missing = tickers.filter(t => !data[t]);
+      if (missing.length > 0) {
+        const fallback = getFallbackData(missing);
+        for (const t of missing) {
+          if (fallback[t]) data[t] = fallback[t];
+          // null = unknown ticker — left out of data so card won't render
+        }
+      }
       return data;
     }
   } catch (e) {
@@ -136,7 +146,6 @@ function getFallbackData(tickers) {
     } else {
       // Unknown ticker — do not fabricate data
       out[t] = null;
-
     }
   }
   return out;
@@ -688,7 +697,7 @@ document.addEventListener('keydown', (e) => {
 // =========================================================
 //  ACTIONS
 // =========================================================
-function addTicker(ticker) {
+async function addTicker(ticker) {
   ticker = ticker.toUpperCase().replace(/[^A-Z0-9.]/g, '').trim();
   if (!ticker) return;
   if (watchlist.includes(ticker)) {
@@ -699,10 +708,19 @@ function addTicker(ticker) {
     showToast('Watchlist is full (max 20)', true);
     return;
   }
+  // Validate ticker — fetch data first, reject if unknown
+  showToast(`Looking up ${ticker}...`);
+  const data = await fetchStockData([ticker]);
+  if (!data[ticker]) {
+    showToast(`Ticker "${ticker}" not found. Check the symbol and try again.`, true);
+    return;
+  }
+  stockData[ticker] = data[ticker];
   watchlist.unshift(ticker);
   saveWatchlist();
   showToast(`${ticker} added to watchlist`);
-  loadAndRender();
+  renderGrid();
+  updateMarketStatus();
 }
 
 function removeTicker(ticker) {
@@ -745,6 +763,13 @@ async function loadAndRender() {
   grid.innerHTML = `<div class="empty-state"><div class="loading-spinner"></div><p style="margin-top:12px;color:var(--text-muted)">Loading market data...</p></div>`;
 
   const data = await fetchStockData(watchlist);
+  // Filter out null entries (unknown tickers) and remove them from watchlist
+  const invalidTickers = Object.keys(data).filter(t => data[t] === null);
+  if (invalidTickers.length > 0) {
+    invalidTickers.forEach(t => delete data[t]);
+    watchlist = watchlist.filter(t => !invalidTickers.includes(t));
+    saveWatchlist();
+  }
   stockData = { ...stockData, ...data };
   renderGrid();
   updateMarketStatus();
