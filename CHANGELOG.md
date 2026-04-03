@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.0.1 — 2026-04-01
+
+### Mobile Audit @ 375px (Pixel)
+- **Tap targets**: Bumped header icon buttons from 40px to 44px minimum on mobile
+- **Tap targets**: Added min-height 44px to display pagination buttons
+- **Center alignment**: Stock cards now center-align text, price row, and metrics on mobile per design rules
+- **Card remove button**: Positioned absolutely on mobile so centering doesn't displace it
+- **Font sizes**: Increased card-company and card-metrics from 0.72rem to 0.76rem for readability
+- **Font sizes**: Bumped market status badge from 0.68rem to 0.7rem on mobile
+- **Font sizes**: Increased modal metric labels from 0.68rem to 0.72rem on mobile
+- **Sparklines**: Increased mobile sparkline height from 80px to 90px for bigger charts on small screens
+- **Contrast**: Improved `--text-muted` from #7a8592 to #8590a0 for better readability on dark bg
+- **Ticker tape**: Adjusted mobile tape height from 32px to 34px and refined item spacing
+- **Spacing**: Increased dashboard side padding from 10px to 12px on mobile; card padding from 12px to 14px
+
 ## v2.0.0 — 2026-04-01
 
 ### Major Visual Overhaul — Trading Floor Energy (Builder)

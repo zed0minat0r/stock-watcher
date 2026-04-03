@@ -9,7 +9,7 @@
   --border: #253040;
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-muted: #7a8592;
+  --text-muted: #8590a0;
   --green: #00d672;
   --green-dim: #0d8050;
   --green-bg: rgba(0, 214, 114, 0.08);
@@ -27,6 +27,32 @@
 }
 
 html { scroll-behavior: smooth; overflow-x: hidden; }
+
+/* Skip-to-content link (a11y) */
+.skip-to-content {
+  position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+  background: var(--blue); color: #fff; padding: 8px 20px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  font-weight: 600; font-size: 0.9rem; z-index: 9999;
+  text-decoration: none; transition: top 0.2s ease;
+}
+.skip-to-content:focus {
+  top: 0; outline: 2px solid var(--blue); outline-offset: 2px;
+}
+
+/* Crosshair OHLC tooltip */
+.chart-tooltip {
+  display: none; position: absolute; top: 8px; left: 8px;
+  background: rgba(10, 14, 20, 0.92); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 10px;
+  font-size: 0.78rem; color: var(--text-primary); z-index: 10;
+  pointer-events: none; min-width: 120px; backdrop-filter: blur(8px);
+  font-variant-numeric: tabular-nums;
+}
+.chart-tooltip .tt-date { color: var(--text-muted); font-size: 0.72rem; margin-bottom: 4px; font-weight: 600; }
+.chart-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; line-height: 1.6; }
+.chart-tooltip .tt-row span:first-child { color: var(--text-muted); font-weight: 500; }
+.chart-tooltip .tt-change { margin-top: 4px; font-weight: 700; font-size: 0.82rem; text-align: right; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -720,19 +746,27 @@ body {
   .header-left { gap: 6px; }
   .header-left .logo { font-size: 1.25rem; }
   .header-right { gap: 4px; }
-  .header-right .icon-btn { min-width: 40px; min-height: 40px; padding: 6px; font-size: 1rem; }
-  .market-status { font-size: 0.68rem; padding: 3px 8px; }
+  .header-right .icon-btn { min-width: 44px; min-height: 44px; padding: 6px; font-size: 1rem; }
+  .market-status { font-size: 0.7rem; padding: 4px 10px; }
   .last-updated { display: none; }
 
   .header-search { padding: 0 12px 10px; }
   #search-form { max-width: 100%; }
 
-  #dashboard { padding: 14px 10px; }
+  #dashboard { padding: 14px 12px; }
   .stock-grid { gap: 10px; }
-  .stock-card { padding: 14px 12px; }
+  .stock-card { padding: 16px 14px; text-align: center; align-items: center; }
+  .card-top { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+  .card-top .card-remove { position: absolute; top: 0; right: 0; }
+  .card-price-row { justify-content: center; }
+  .card-metrics { justify-items: center; }
   .card-price { font-size: 1.5rem; }
+  .card-company { font-size: 0.76rem; }
+  .card-metrics { font-size: 0.76rem; }
+  .card-sparkline { height: 90px; }
 
   .modal-content { padding: 16px; }
+  .modal-metric-label { font-size: 0.72rem; }
   #chart-container { height: 260px; }
 
   .display-overlay { padding: 12px 14px; }
@@ -751,8 +785,8 @@ body {
     justify-content: center;
   }
 
-  .ticker-tape-wrapper { height: 32px; }
-  .ticker-tape-item { font-size: 0.75rem; padding: 0 14px; }
+  .ticker-tape-wrapper { height: 34px; }
+  .ticker-tape-item { font-size: 0.76rem; padding: 0 14px; gap: 6px; }
 }
 
 @media (min-width: 601px) and (max-width: 959px) {
@@ -798,7 +832,8 @@ body {
   gap: 8px;
 }
 .display-page-btn {
-  padding: 6px 14px;
+  padding: 10px 14px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-card);
