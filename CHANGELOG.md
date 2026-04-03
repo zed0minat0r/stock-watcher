@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.2.0 — 2026-04-01
+
+### Accessibility & Display Mode Refinements (Refiner)
+- **Keyboard navigation**: Stock cards are now focusable (`tabindex="0"`, `role="button"`) with Enter/Space to open chart
+- **Focus trap on chart modal**: Tab cycles within modal; focus returns to trigger card on close
+- **WCAG AA contrast**: Bumped `--text-muted` from `#5a6572` to `#7a8592` for compliant contrast ratio
+- **aria-live for price updates**: Stock grid has `aria-live="polite"` so screen readers announce changes
+- **role="alert" on toasts**: Toast notifications are now announced by assistive tech
+- **Focus-visible outlines**: Global `:focus-visible` ring using `--blue` color
+- **Mobile remove button**: Always visible on touch devices (compact circle X in top-right)
+- **Display mode larger fonts**: Ticker 2.2rem, price 3.4rem, change 1.2rem for TV readability
+- **Stronger active-card highlight**: Scale 1.03, thicker blue border, inset glow on active display card
+- **Display mode pagination**: Prev/Next controls appear when watchlist exceeds 8 stocks
+- **TradingView CDN defer**: Added `defer` to lightweight-charts script to unblock render
+- **prefers-reduced-motion**: Disables animations/transitions for users who prefer reduced motion
+
 ## v1.1.0 — 2026-04-01
 
 ### Premium Glassmorphism Stock Cards (Spark)

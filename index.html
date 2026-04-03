@@ -6,7 +6,7 @@
   <title>StockPulse — Market Dashboard</title>
   <meta name="description" content="Real-time stock market dashboard with charts, watchlist, and display mode.">
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js" defer></script>
 </head>
 <body>
   <!-- Header -->
@@ -19,6 +19,7 @@
       <form id="search-form" autocomplete="off">
         <input type="text" id="search-input" placeholder="Add ticker (e.g. AAPL)" maxlength="10" aria-label="Search for a stock ticker">
         <button type="submit" id="search-btn">+ Add</button>
+        <div class="search-autocomplete" id="search-autocomplete"></div>
       </form>
     </div>
     <div class="header-right">
@@ -30,7 +31,7 @@
 
   <!-- Main dashboard -->
   <main id="dashboard">
-    <div id="stock-grid" class="stock-grid"></div>
+    <div id="stock-grid" class="stock-grid" aria-live="polite" aria-relevant="additions removals"></div>
   </main>
 
   <!-- Detail chart modal -->
@@ -67,6 +68,11 @@
     </div>
     <div id="display-grid" class="display-grid"></div>
     <div class="display-footer">
+      <div id="display-pagination" class="display-pagination" style="display:none;">
+        <button class="display-page-btn" id="display-prev-btn" aria-label="Previous page">&larr; Prev</button>
+        <span class="display-page-label" id="display-page-label"></span>
+        <button class="display-page-btn" id="display-next-btn" aria-label="Next page">Next &rarr;</button>
+      </div>
       <span id="display-rotate-label">Auto-rotating every 10s</span>
       <div id="display-dots" class="display-dots"></div>
     </div>

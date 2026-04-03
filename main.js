@@ -134,19 +134,9 @@ function getFallbackData(tickers) {
         cap: formatBigNumber(base.cap),
       };
     } else {
-      // Unknown ticker — generate plausible placeholder data
-      const price = +(50 + Math.random() * 300).toFixed(2);
-      const change = +((Math.random() - 0.5) * 8).toFixed(2);
-      out[t] = {
-        name: t,
-        price,
-        change,
-        pct: +((change / (price - change)) * 100).toFixed(2),
-        volume: formatBigNumber(Math.floor(Math.random() * 50_000_000)),
-        cap: formatBigNumber(Math.floor(Math.random() * 500_000_000_000)),
-        high52: +(price * (1 + Math.random() * 0.4)).toFixed(2),
-        low52: +(price * (1 - Math.random() * 0.3)).toFixed(2),
-      };
+      // Unknown ticker — do not fabricate data
+      out[t] = null;
+
     }
   }
   return out;
@@ -265,6 +255,8 @@ function showToast(msg, isError = false) {
   if (!toast) {
     toast = document.createElement('div');
     toast.className = 'toast';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
@@ -312,6 +304,9 @@ function renderGrid() {
 
     const card = document.createElement('div');
     card.className = 'stock-card';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `${ticker} ${d.name} ${formatPrice(d.price)} ${up ? 'up' : 'down'} ${formatChange(d.change, d.pct)}. Press Enter to view chart.`);
     card.dataset.ticker = ticker;
     card.dataset.trend = up ? 'up' : 'down';
     card.innerHTML = `
@@ -339,6 +334,15 @@ function renderGrid() {
     card.addEventListener('click', (e) => {
       if (e.target.classList.contains('card-remove')) return;
       openModal(ticker);
+    });
+
+    // Keyboard: Enter/Space -> open chart
+    card.addEventListener('keydown', (e) => {
+      if (e.target.classList.contains('card-remove')) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openModal(ticker);
+      }
     });
 
     // Remove button
@@ -397,11 +401,14 @@ function renderSparkline(ticker) {
 // =========================================================
 let modalChart = null;
 
+let _lastFocusedElement = null;
+
 function openModal(ticker) {
   const d = stockData[ticker];
   if (!d) return;
   const up = isUp(d.change);
   currentModalTicker = ticker;
+  _lastFocusedElement = document.activeElement;
 
   $('#modal-ticker').textContent = ticker;
   $('#modal-company').textContent = d.name;
@@ -431,6 +438,11 @@ function openModal(ticker) {
 
   renderModalChart(ticker, 90);
   modal.classList.remove('hidden');
+
+  // Focus trap: move focus to close button
+  requestAnimationFrame(() => {
+    $('#modal-close').focus();
+  });
 }
 
 function renderModalChart(ticker, days) {
@@ -472,10 +484,29 @@ function closeModal() {
   if (modal._resizeHandler) {
     window.removeEventListener('resize', modal._resizeHandler);
   }
+  // Return focus to the element that opened the modal
+  if (_lastFocusedElement) {
+    _lastFocusedElement.focus();
+    _lastFocusedElement = null;
+  }
 }
 
 $('#modal-close').addEventListener('click', closeModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+// Focus trap inside modal
+modal.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+  } else {
+    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
 
 // Time range buttons
 $('#chart-timerange').addEventListener('click', (e) => {
@@ -490,9 +521,12 @@ $('#chart-timerange').addEventListener('click', (e) => {
 //  DISPLAY MODE (Fullscreen, auto-rotate)
 // =========================================================
 let displayClockInterval = null;
+let displayPage = 0;
+const DISPLAY_PAGE_SIZE = 8;
 
 function enterDisplayMode() {
   displayIndex = 0;
+  displayPage = 0;
   renderDisplayGrid();
   displayOverlay.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -508,7 +542,8 @@ function enterDisplayMode() {
   displayClockInterval = setInterval(updateDisplayClock, 1000);
 
   displayInterval = setInterval(() => {
-    displayIndex = (displayIndex + 1) % Math.min(watchlist.length, 8);
+    const pageSize = Math.min(watchlist.length - displayPage * DISPLAY_PAGE_SIZE, DISPLAY_PAGE_SIZE);
+    displayIndex = (displayIndex + 1) % pageSize;
     highlightDisplayCard();
   }, DISPLAY_ROTATE_INTERVAL);
 }
@@ -529,7 +564,20 @@ function exitDisplayMode() {
 function renderDisplayGrid() {
   const dg = $('#display-grid');
   dg.innerHTML = '';
-  const shown = watchlist.slice(0, 8); // Max 8 for 2x4 grid
+  const totalPages = Math.ceil(watchlist.length / DISPLAY_PAGE_SIZE);
+  const start = displayPage * DISPLAY_PAGE_SIZE;
+  const shown = watchlist.slice(start, start + DISPLAY_PAGE_SIZE);
+
+  // Show/hide pagination controls
+  const pagination = $('#display-pagination');
+  if (totalPages > 1) {
+    pagination.style.display = 'flex';
+    $('#display-page-label').textContent = `Page ${displayPage + 1} / ${totalPages}`;
+    $('#display-prev-btn').disabled = displayPage === 0;
+    $('#display-next-btn').disabled = displayPage >= totalPages - 1;
+  } else {
+    pagination.style.display = 'none';
+  }
 
   for (let i = 0; i < shown.length; i++) {
     const ticker = shown[i];
@@ -580,6 +628,25 @@ function updateDisplayClock() {
 
 $('#display-mode-btn').addEventListener('click', enterDisplayMode);
 $('#exit-display-btn').addEventListener('click', exitDisplayMode);
+
+// Display mode pagination
+$('#display-prev-btn').addEventListener('click', () => {
+  if (displayPage > 0) {
+    displayPage--;
+    displayIndex = 0;
+    renderDisplayGrid();
+    highlightDisplayCard();
+  }
+});
+$('#display-next-btn').addEventListener('click', () => {
+  const totalPages = Math.ceil(watchlist.length / DISPLAY_PAGE_SIZE);
+  if (displayPage < totalPages - 1) {
+    displayPage++;
+    displayIndex = 0;
+    renderDisplayGrid();
+    highlightDisplayCard();
+  }
+});
 
 // Fullscreen change event — if user exits via ESC/browser button
 document.addEventListener('fullscreenchange', () => {
