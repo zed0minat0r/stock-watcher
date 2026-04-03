@@ -294,6 +294,19 @@ body {
   vertical-align: middle;
   margin-left: 2px;
 }
+.ticker-tape-item .tape-static-badge {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0px 3px;
+  margin-left: 3px;
+  vertical-align: middle;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
 
 /* ===== AUTOCOMPLETE DROPDOWN ===== */
 .search-autocomplete {
@@ -528,22 +541,14 @@ body {
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
-/* Ambient glow reflection beneath cards — subtle color-matched halo */
+/* Static glow reflection beneath cards — subtle color-matched halo */
 .stock-card[data-trend="up"] {
   box-shadow: 0 4px 24px rgba(0, 214, 114, 0.07), 0 12px 48px rgba(0, 214, 114, 0.04);
-  animation: cardSlideUp 0.4s ease-out both, ambientPulseGreen 4s ease-in-out infinite;
+  animation: cardSlideUp 0.4s ease-out both;
 }
 .stock-card[data-trend="down"] {
   box-shadow: 0 4px 24px rgba(255, 71, 87, 0.07), 0 12px 48px rgba(255, 71, 87, 0.04);
-  animation: cardSlideUp 0.4s ease-out both, ambientPulseRed 4s ease-in-out infinite;
-}
-@keyframes ambientPulseGreen {
-  0%, 100% { box-shadow: 0 4px 24px rgba(0, 214, 114, 0.07), 0 12px 48px rgba(0, 214, 114, 0.04); }
-  50% { box-shadow: 0 4px 28px rgba(0, 214, 114, 0.11), 0 12px 52px rgba(0, 214, 114, 0.06); }
-}
-@keyframes ambientPulseRed {
-  0%, 100% { box-shadow: 0 4px 24px rgba(255, 71, 87, 0.07), 0 12px 48px rgba(255, 71, 87, 0.04); }
-  50% { box-shadow: 0 4px 28px rgba(255, 71, 87, 0.11), 0 12px 52px rgba(255, 71, 87, 0.06); }
+  animation: cardSlideUp 0.4s ease-out both;
 }
 
 .stock-card:hover,
@@ -638,13 +643,10 @@ body {
   opacity: 0.75;
 }
 
-/* ===== LIVE DATA PULSE ===== */
-@keyframes livePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
+/* ===== LIVE DATA PULSE — one-shot flash only on price update ===== */
+/* Continuous livePulse removed; price updates use flash-up/flash-down instead */
 .card-price.live-pulse {
-  animation: livePulse 2.5s ease-in-out infinite;
+  /* no continuous animation — price flashes once via flash-up/flash-down on update */
 }
 
 /* ===== MODAL ===== */
@@ -1021,8 +1023,12 @@ body {
   #search-form { max-width: 100%; }
 
   #dashboard { padding: 14px 12px; }
-  .dashboard-toolbar { gap: 6px; margin-bottom: 10px; }
-  .sort-btn { padding: 5px 10px; font-size: 0.74rem; min-height: 32px; }
+  .dashboard-toolbar { gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .sort-btns { gap: 5px; flex-wrap: wrap; }
+  .sort-btn { padding: 5px 8px; font-size: 0.72rem; min-height: 32px; }
+  /* Shorten "Top Gainers"/"Top Losers" → "Gainers"/"Losers" via content override */
+  .sort-btn[data-mobile-label] { font-size: 0; }
+  .sort-btn[data-mobile-label]::after { content: attr(data-mobile-label); font-size: 0.72rem; }
   .stock-grid { gap: 10px; }
   .stock-card { padding: 16px 14px; text-align: center; align-items: center; }
   .card-top { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px; position: relative; }
@@ -1041,9 +1047,9 @@ body {
   .modal-metric-label { font-size: 0.72rem; }
   #chart-container { height: 260px; }
 
-  .portfolio-summary { font-size: 0.74rem; gap: 4px; margin-bottom: 8px; }
+  .portfolio-summary { font-size: 0.74rem; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
   .ps-sep:nth-of-type(n+3) { display: none; }
-  .ps-item.ps-best, .ps-item.ps-worst { display: none; }
+  .ps-item.ps-best, .ps-item.ps-worst { display: inline-flex; }
 
   .display-kbd-hint { display: none; }
   .display-overlay { padding: 10px 10px; }
@@ -1102,14 +1108,26 @@ body {
 .stock-card {
   animation: cardSlideUp 0.4s ease-out both;
 }
-.stock-card:nth-child(1) { animation-delay: 0s; }
-.stock-card:nth-child(2) { animation-delay: 0.04s; }
-.stock-card:nth-child(3) { animation-delay: 0.08s; }
-.stock-card:nth-child(4) { animation-delay: 0.12s; }
-.stock-card:nth-child(5) { animation-delay: 0.16s; }
-.stock-card:nth-child(6) { animation-delay: 0.20s; }
-.stock-card:nth-child(7) { animation-delay: 0.24s; }
-.stock-card:nth-child(8) { animation-delay: 0.28s; }
+.stock-card:nth-child(1)  { animation-delay: 0s; }
+.stock-card:nth-child(2)  { animation-delay: 0.04s; }
+.stock-card:nth-child(3)  { animation-delay: 0.08s; }
+.stock-card:nth-child(4)  { animation-delay: 0.12s; }
+.stock-card:nth-child(5)  { animation-delay: 0.16s; }
+.stock-card:nth-child(6)  { animation-delay: 0.20s; }
+.stock-card:nth-child(7)  { animation-delay: 0.24s; }
+.stock-card:nth-child(8)  { animation-delay: 0.28s; }
+.stock-card:nth-child(9)  { animation-delay: 0.32s; }
+.stock-card:nth-child(10) { animation-delay: 0.36s; }
+.stock-card:nth-child(11) { animation-delay: 0.40s; }
+.stock-card:nth-child(12) { animation-delay: 0.44s; }
+.stock-card:nth-child(13) { animation-delay: 0.48s; }
+.stock-card:nth-child(14) { animation-delay: 0.52s; }
+.stock-card:nth-child(15) { animation-delay: 0.56s; }
+.stock-card:nth-child(16) { animation-delay: 0.60s; }
+.stock-card:nth-child(17) { animation-delay: 0.64s; }
+.stock-card:nth-child(18) { animation-delay: 0.68s; }
+.stock-card:nth-child(19) { animation-delay: 0.72s; }
+.stock-card:nth-child(20) { animation-delay: 0.76s; }
 
 /* ===== DISPLAY PAGINATION ===== */
 .display-pagination {

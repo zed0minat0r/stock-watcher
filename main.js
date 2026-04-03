@@ -747,6 +747,7 @@ async function openModal(ticker) {
   });
 
   renderModalChart(ticker, 90); // 3M default
+  modal.setAttribute('aria-label', `${ticker} — ${d.name} Stock Detail`);
   modal.classList.remove('hidden');
 
   // Focus trap: move focus to close button
@@ -1422,7 +1423,7 @@ function renderTickerTape(indices) {
     const up = idx.change >= 0;
     const sign = up ? '+' : '';
     const arrow = up ? '\u25B2' : '\u25BC';
-    const liveIndicator = idx.live ? ' <span class="tape-live-dot">&#9679;</span>' : '';
+    const liveIndicator = idx.live ? ' <span class="tape-live-dot">&#9679;</span>' : ' <span class="tape-static-badge">est</span>';
     return `<div class="ticker-tape-item">
       <span class="tape-label">${idx.label}</span>
       <span class="tape-price">${idx.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>

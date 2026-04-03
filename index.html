@@ -44,11 +44,11 @@
     <div id="dashboard-toolbar" class="dashboard-toolbar">
       <span class="toolbar-label">Sort by</span>
       <div class="sort-btns" role="radiogroup" aria-label="Sort stocks by">
-        <button class="sort-btn active" data-sort="default" role="radio" aria-checked="true">Default</button>
-        <button class="sort-btn" data-sort="change-desc" role="radio" aria-checked="false">Top Gainers</button>
-        <button class="sort-btn" data-sort="change-asc" role="radio" aria-checked="false">Top Losers</button>
-        <button class="sort-btn" data-sort="price-desc" role="radio" aria-checked="false">Price ↓</button>
-        <button class="sort-btn" data-sort="alpha" role="radio" aria-checked="false">A–Z</button>
+        <button class="sort-btn active" data-sort="default" data-mobile-label="Default" role="radio" aria-checked="true">Default</button>
+        <button class="sort-btn" data-sort="change-desc" data-mobile-label="Gainers" role="radio" aria-checked="false">Top Gainers</button>
+        <button class="sort-btn" data-sort="change-asc" data-mobile-label="Losers" role="radio" aria-checked="false">Top Losers</button>
+        <button class="sort-btn" data-sort="price-desc" data-mobile-label="Price ↓" role="radio" aria-checked="false">Price ↓</button>
+        <button class="sort-btn" data-sort="alpha" data-mobile-label="A–Z" role="radio" aria-checked="false">A–Z</button>
       </div>
     </div>
     <div id="stock-grid" class="stock-grid" aria-live="polite" aria-relevant="additions removals"></div>
@@ -80,7 +80,7 @@
   </div>
 
   <!-- Display mode overlay -->
-  <div id="display-overlay" class="display-overlay hidden">
+  <div id="display-overlay" class="display-overlay hidden" role="region" aria-label="StockPulse Display Mode — fullscreen market dashboard">
     <div class="display-header">
       <h1 class="logo"><span class="logo-icon">&#9670;</span> <span class="logo-text">StockPulse</span></h1>
       <div class="display-controls">
