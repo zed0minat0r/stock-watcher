@@ -389,7 +389,6 @@ function updateMarketStatus() {
   const mins = hour * 60 + min;
   const isOpen = dow >= 1 && dow <= 5 && mins >= 570 && mins < 960; // 9:30-16:00 ET
 
-  const els = [$$('.market-status')];
   document.querySelectorAll('.market-status').forEach(el => {
     el.textContent = isOpen ? 'LIVE' : 'Market Closed';
     el.className = `market-status ${isOpen ? 'open' : 'closed'}`;
@@ -1356,11 +1355,8 @@ async function loadAndRender() {
     const card = document.querySelector(`.stock-card[data-ticker="${ticker}"]`);
     if (!card) continue;
     card.classList.add(dir === 'up' ? 'flash-up' : 'flash-down');
-    const priceEl = card.querySelector('.card-price');
-    if (priceEl) priceEl.classList.add(dir === 'up' ? 'price-flash-up' : 'price-flash-down');
     setTimeout(() => {
       card.classList.remove('flash-up', 'flash-down');
-      if (priceEl) priceEl.classList.remove('price-flash-up', 'price-flash-down');
     }, 1200);
   }
 

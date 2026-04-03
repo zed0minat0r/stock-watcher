@@ -638,11 +638,6 @@ body {
   opacity: 0.75;
 }
 
-@media (max-width: 600px) {
-  .card-live-badge { text-align: center; }
-  .card-range-bar-wrap { text-align: center; width: 100%; }
-}
-
 /* ===== LIVE DATA PULSE ===== */
 @keyframes livePulse {
   0%, 100% { opacity: 1; }
