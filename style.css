@@ -40,21 +40,45 @@ body {
 /* ===== HEADER ===== */
 #app-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
+  flex-direction: column;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
-  gap: 12px;
-  flex-wrap: wrap;
   backdrop-filter: blur(12px);
 }
 
-.header-left, .header-right { display: flex; align-items: center; gap: 10px; }
-.header-center { flex: 1; display: flex; justify-content: center; min-width: 200px; }
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 10px;
+}
+
+.header-left, .header-right { display: flex; align-items: center; gap: 8px; }
+
+.header-search {
+  display: none;
+  padding: 0 16px 10px;
+}
+.header-search.open {
+  display: block;
+}
+
+/* On desktop, always show search inline */
+@media (min-width: 601px) {
+  .header-row { padding: 12px 24px; }
+  .header-search {
+    display: none;
+  }
+  .header-search.open {
+    display: block;
+    padding: 0 24px 12px;
+  }
+  #search-toggle-btn { display: inline-flex; }
+}
 
 .logo {
   font-size: 1.35rem;
@@ -85,7 +109,7 @@ body {
 #search-form {
   display: flex;
   gap: 6px;
-  max-width: 320px;
+  max-width: 480px;
   width: 100%;
   position: relative;
 }
@@ -108,7 +132,8 @@ body {
 }
 .search-autocomplete.visible { display: block; }
 .search-autocomplete-item {
-  padding: 8px 14px;
+  padding: 10px 14px;
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -140,34 +165,55 @@ body {
 
 #search-input {
   flex: 1;
-  padding: 8px 14px;
+  padding: 10px 14px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 16px; /* Prevents iOS zoom on focus */
   outline: none;
   text-transform: uppercase;
   transition: border-color var(--transition);
+  min-height: 44px;
 }
 #search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(78,168,246,0.15); }
 #search-input::placeholder { text-transform: none; color: var(--text-muted); }
 
-#search-btn, #refresh-btn, #display-mode-btn {
-  padding: 8px 14px;
+/* Shared button base for header icon buttons */
+.icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   white-space: nowrap;
   transition: background var(--transition), border-color var(--transition);
 }
-#search-btn:hover, #refresh-btn:hover, #display-mode-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
-#search-btn { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); font-weight: 700; }
-#refresh-btn { font-size: 1.15rem; padding: 8px 10px; }
-#display-mode-btn { font-size: 1.05rem; padding: 8px 10px; }
+.icon-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+
+#search-toggle-btn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+
+#search-btn {
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--blue);
+  background: var(--blue-bg);
+  color: var(--blue);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: background var(--transition), border-color var(--transition);
+}
+#search-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
 
 /* ===== STOCK GRID ===== */
 #dashboard { padding: 20px 24px; max-width: 1440px; margin: 0 auto; }
@@ -345,13 +391,14 @@ body {
   margin-bottom: 12px;
 }
 .tr-btn {
-  padding: 5px 12px;
+  padding: 8px 14px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   transition: all var(--transition);
 }
@@ -487,27 +534,41 @@ body {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
-  #app-header {
-    padding: 10px 14px;
-    justify-content: center;
-  }
-  .header-left { width: 100%; justify-content: center; }
-  .header-center { width: 100%; }
-  .header-right { width: 100%; justify-content: center; }
-  .header-left .logo { font-size: 1.15rem; }
+  /* Single-row header: logo left, icon buttons right */
+  .header-row { padding: 8px 12px; }
+  .header-left .logo { font-size: 1.1rem; }
   .last-updated { display: none; }
-  #dashboard { padding: 14px 12px; }
+
+  /* Search drawer slides down below header row */
+  .header-search { padding: 0 12px 10px; }
+  #search-form { max-width: 100%; }
+
+  /* Dashboard spacing */
+  #dashboard { padding: 14px 10px; }
   .stock-grid { gap: 10px; }
-  .stock-card { padding: 14px; }
+  .stock-card { padding: 14px 12px; }
   .card-price { font-size: 1.35rem; }
+
+  /* Modal */
   .modal-content { padding: 16px; }
   #chart-container { height: 260px; }
+
+  /* Display mode */
   .display-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(4, 1fr);
   }
   .display-card .d-price { font-size: 2rem; }
   .display-card .d-ticker { font-size: 1.5rem; }
+
+  /* Ensure modal close button has 44px tap target */
+  .modal-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 601px) and (max-width: 959px) {
@@ -557,16 +618,16 @@ body {
 @media (hover: none), (pointer: coarse) {
   .card-remove {
     opacity: 1;
-    font-size: 0.85rem;
+    font-size: 1rem;
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 4px;
+    right: 4px;
     z-index: 2;
     color: var(--text-secondary);
     background: rgba(0,0,0,0.3);
     border-radius: 50%;
-    width: 22px;
-    height: 22px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;

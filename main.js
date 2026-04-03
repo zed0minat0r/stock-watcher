@@ -55,6 +55,17 @@ const searchForm = $('#search-form');
 const searchInput = $('#search-input');
 const modal = $('#chart-modal');
 const displayOverlay = $('#display-overlay');
+const searchToggleBtn = $('#search-toggle-btn');
+const headerSearch = $('#header-search');
+
+// ---- SEARCH TOGGLE (mobile compact header) ----
+if (searchToggleBtn && headerSearch) {
+  searchToggleBtn.addEventListener('click', () => {
+    const isOpen = headerSearch.classList.toggle('open');
+    searchToggleBtn.classList.toggle('active', isOpen);
+    if (isOpen) searchInput.focus();
+  });
+}
 
 // =========================================================
 //  DATA LAYER — structured so API provider can be swapped
@@ -152,9 +163,84 @@ function getFallbackData(tickers) {
 }
 
 /**
- * Generate sparkline data points (area chart)
+ * Cache for historical candle data: { 'AAPL_D_30': { data: [...], ts: Date.now() } }
  */
-function generateSparklineData(ticker, points = 30) {
+const _candleCache = {};
+const CANDLE_CACHE_TTL = 5 * 60 * 1000; // 5 min cache
+
+/**
+ * Fetch real historical candle data from Finnhub /stock/candle endpoint.
+ * resolution: '1', '5', '15', '30', '60', 'D', 'W', 'M'
+ * Returns array of { time, open, high, low, close } for candlestick,
+ * or array of { time, value } for sparkline (close-only).
+ */
+async function fetchCandleData(ticker, days = 90, mode = 'candle') {
+  const resolution = days <= 5 ? '15' : 'D';
+  const cacheKey = `${ticker}_${resolution}_${days}`;
+  const cached = _candleCache[cacheKey];
+  if (cached && (Date.now() - cached.ts) < CANDLE_CACHE_TTL) {
+    return mode === 'sparkline'
+      ? cached.data.map(d => ({ time: d.time, value: d.close }))
+      : cached.data;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const from = now - days * 86400;
+  const url = `${API_CONFIG.baseUrl}/stock/candle?symbol=${encodeURIComponent(ticker)}&resolution=${resolution}&from=${from}&to=${now}&token=${API_CONFIG.finnhubKey}`;
+
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    if (json.s !== 'ok' || !json.c || json.c.length === 0) {
+      console.warn(`No candle data for ${ticker}, falling back to generated data`);
+      return mode === 'sparkline'
+        ? _generateFallbackSparkline(ticker)
+        : _generateFallbackCandles(ticker, days);
+    }
+
+    const data = [];
+    for (let i = 0; i < json.c.length; i++) {
+      const ts = json.t[i];
+      // For daily resolution, convert to YYYY-MM-DD string
+      let timeVal;
+      if (resolution === 'D' || resolution === 'W' || resolution === 'M') {
+        const dt = new Date(ts * 1000);
+        timeVal = dt.toISOString().split('T')[0];
+      } else {
+        timeVal = ts;
+      }
+      data.push({
+        time: timeVal,
+        open: +json.o[i].toFixed(2),
+        high: +json.h[i].toFixed(2),
+        low: +json.l[i].toFixed(2),
+        close: +json.c[i].toFixed(2),
+      });
+    }
+
+    // Sort by time ascending
+    data.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+
+    _candleCache[cacheKey] = { data, ts: Date.now() };
+
+    if (mode === 'sparkline') {
+      return data.map(d => ({ time: d.time, value: d.close }));
+    }
+    return data;
+  } catch (err) {
+    console.warn(`Candle fetch failed for ${ticker}:`, err.message);
+    return mode === 'sparkline'
+      ? _generateFallbackSparkline(ticker)
+      : _generateFallbackCandles(ticker, days);
+  }
+}
+
+/**
+ * Fallback sparkline generator (used only when API fails)
+ */
+function _generateFallbackSparkline(ticker, points = 30) {
   const base = stockData[ticker];
   if (!base) return [];
   const data = [];
@@ -166,15 +252,14 @@ function generateSparklineData(ticker, points = 30) {
     d.setMinutes(d.getMinutes() - i * 15);
     data.push({ time: d.getTime() / 1000, value: +val.toFixed(2) });
   }
-  // Last point = current price
   data[data.length - 1].value = base.price;
   return data;
 }
 
 /**
- * Generate candlestick chart data
+ * Fallback candlestick generator (used only when API fails)
  */
-function generateChartData(ticker, days = 90) {
+function _generateFallbackCandles(ticker, days = 90) {
   const base = stockData[ticker];
   if (!base) return [];
   const data = [];
@@ -183,7 +268,6 @@ function generateChartData(ticker, days = 90) {
   for (let i = days; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    // Skip weekends
     const dow = d.getDay();
     if (dow === 0 || dow === 6) continue;
     const dayStr = d.toISOString().split('T')[0];
@@ -200,7 +284,6 @@ function generateChartData(ticker, days = 90) {
       close: +close.toFixed(2),
     });
   }
-  // Last candle matches current price
   if (data.length > 0) {
     const last = data[data.length - 1];
     last.close = base.price;
@@ -400,9 +483,14 @@ function renderSparkline(ticker) {
     priceLineVisible: false,
     lastValueVisible: false,
   });
-  series.setData(generateSparklineData(ticker));
-  chart.timeScale().fitContent();
+  // Fetch real historical data for sparkline (30 days)
   sparklineCharts[ticker] = chart;
+  fetchCandleData(ticker, 30, 'sparkline').then(data => {
+    if (data && data.length > 0) {
+      series.setData(data);
+      chart.timeScale().fitContent();
+    }
+  });
 }
 
 // =========================================================
@@ -443,7 +531,11 @@ function openModal(ticker) {
   }).join('');
 
   // Reset timerange buttons
-  $$('.tr-btn').forEach(b => b.classList.toggle('active', b.dataset.days === '90'));
+  $$('.tr-btn').forEach(b => {
+    const isActive = b.dataset.days === '90';
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-checked', isActive ? 'true' : 'false');
+  });
 
   renderModalChart(ticker, 90);
   modal.classList.remove('hidden');
@@ -475,8 +567,13 @@ function renderModalChart(ticker, days) {
     borderUpColor: '#00d672', borderDownColor: '#ff4757',
     wickUpColor: '#00d672', wickDownColor: '#ff4757',
   });
-  candleSeries.setData(generateChartData(ticker, days));
-  modalChart.timeScale().fitContent();
+  // Fetch real historical candle data
+  fetchCandleData(ticker, days, 'candle').then(data => {
+    if (data && data.length > 0 && modalChart) {
+      candleSeries.setData(data);
+      modalChart.timeScale().fitContent();
+    }
+  });
 
   // Resize handler
   const onResize = () => {
@@ -521,8 +618,12 @@ modal.addEventListener('keydown', (e) => {
 $('#chart-timerange').addEventListener('click', (e) => {
   const btn = e.target.closest('.tr-btn');
   if (!btn || !currentModalTicker) return;
-  $$('.tr-btn').forEach(b => b.classList.remove('active'));
+  $$('.tr-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-checked', 'false');
+  });
   btn.classList.add('active');
+  btn.setAttribute('aria-checked', 'true');
   renderModalChart(currentModalTicker, parseInt(btn.dataset.days));
 });
 
@@ -674,10 +775,14 @@ document.addEventListener('keydown', (e) => {
     else if (!modal.classList.contains('hidden')) closeModal();
     return;
   }
-  // "/" to focus search
+  // "/" to focus search (also open drawer if collapsed)
   if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
     if (document.activeElement !== searchInput) {
       e.preventDefault();
+      if (headerSearch && !headerSearch.classList.contains('open')) {
+        headerSearch.classList.add('open');
+        if (searchToggleBtn) searchToggleBtn.classList.add('active');
+      }
       searchInput.focus();
     }
     return;
@@ -779,18 +884,21 @@ async function searchAutocomplete(query) {
 function showAutocomplete() {
   acHighlightIdx = -1;
   autocompleteDropdown.innerHTML = acResults.map((r, i) =>
-    `<div class="search-autocomplete-item" data-idx="${i}" data-symbol="${r.symbol}">
+    `<div class="search-autocomplete-item" id="ac-option-${i}" role="option" aria-selected="false" data-idx="${i}" data-symbol="${r.symbol}">
       <span class="ac-symbol">${r.symbol}</span>
       <span class="ac-name">${r.name}</span>
     </div>`
   ).join('');
   autocompleteDropdown.classList.add('visible');
+  searchInput.setAttribute('aria-expanded', 'true');
 }
 
 function hideAutocomplete() {
   autocompleteDropdown.classList.remove('visible');
   acResults = [];
   acHighlightIdx = -1;
+  searchInput.setAttribute('aria-expanded', 'false');
+  searchInput.setAttribute('aria-activedescendant', '');
 }
 
 function selectAutocompleteItem(symbol) {
@@ -812,11 +920,19 @@ searchInput.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     acHighlightIdx = Math.min(acHighlightIdx + 1, items.length - 1);
-    items.forEach((el, i) => el.classList.toggle('highlighted', i === acHighlightIdx));
+    items.forEach((el, i) => {
+      el.classList.toggle('highlighted', i === acHighlightIdx);
+      el.setAttribute('aria-selected', i === acHighlightIdx ? 'true' : 'false');
+    });
+    searchInput.setAttribute('aria-activedescendant', `ac-option-${acHighlightIdx}`);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
     acHighlightIdx = Math.max(acHighlightIdx - 1, 0);
-    items.forEach((el, i) => el.classList.toggle('highlighted', i === acHighlightIdx));
+    items.forEach((el, i) => {
+      el.classList.toggle('highlighted', i === acHighlightIdx);
+      el.setAttribute('aria-selected', i === acHighlightIdx ? 'true' : 'false');
+    });
+    searchInput.setAttribute('aria-activedescendant', `ac-option-${acHighlightIdx}`);
   } else if (e.key === 'Enter' && acHighlightIdx >= 0 && acHighlightIdx < acResults.length) {
     e.preventDefault();
     e.stopPropagation();

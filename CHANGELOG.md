@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.5.0 — 2026-04-01
+
+### Mobile Header Collapse & Touch UX Audit (Pixel)
+- **Fix: 3-row header collapsed to 1 row** — Logo + market status on left, icon buttons on
+  right. Search is now behind a toggle icon (magnifying glass) that opens a slide-down drawer.
+  Saves ~80px of vertical space on iPhone SE (375px).
+- **Fix: Search toggle button** — Tap the magnifying glass to expand/collapse the search bar.
+  "/" keyboard shortcut also opens the drawer automatically.
+- **Fix: Minimum 16px input font size** — Prevents iOS auto-zoom on input focus.
+- **Fix: 44px tap targets** — All header icon buttons, autocomplete items, chart time-range
+  buttons, card remove button, and modal close button now meet 44px minimum.
+- **Fix: Card remove button enlarged** — Touch device remove button increased from 22px to
+  44px diameter for easier tapping.
+- **Fix: Mobile padding & alignment** — Tighter horizontal padding on small screens,
+  full-width search form, consistent center alignment preserved.
+
+## v1.4.0 — 2026-04-01
+
+### Real Historical Charts & ARIA Accessibility (Refiner)
+- **Feature: Real chart data** — Replaced random-walk `generateChartData()` and
+  `generateSparklineData()` with live Finnhub `/stock/candle` API calls. Sparklines now show
+  real 30-day closing prices; candlestick modal shows real OHLC history for 1W/1M/3M/6M/1Y
+  time ranges. 5-minute cache prevents excessive API calls. Falls back to generated data
+  only when the API is unreachable.
+- **Feature: ARIA combobox pattern** — Search autocomplete now implements WAI-ARIA combobox:
+  `role="combobox"` on input, `aria-expanded`, `aria-activedescendant`, `role="listbox"` on
+  dropdown, `role="option"` + `aria-selected` on each item. Screen readers can now navigate
+  the autocomplete dropdown properly.
+- **Feature: Chart timerange radiogroup** — Time range buttons (1W/1M/3M/6M/1Y) now use
+  `role="radiogroup"` with `aria-checked` state management, announcing the active range
+  to assistive technology.
+
 ## v1.3.0 — 2026-04-01
 
 ### Mobile UX, Search Autocomplete & Data Integrity (Builder)
