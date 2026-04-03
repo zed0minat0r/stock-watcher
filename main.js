@@ -337,7 +337,7 @@ function updateMarketStatus() {
 
   const els = [$$('.market-status')];
   document.querySelectorAll('.market-status').forEach(el => {
-    el.textContent = isOpen ? 'Market Open' : 'Market Closed';
+    el.textContent = isOpen ? 'LIVE' : 'Market Closed';
     el.className = `market-status ${isOpen ? 'open' : 'closed'}`;
   });
 }
@@ -983,9 +983,34 @@ async function loadAndRender() {
     watchlist = watchlist.filter(t => !invalidTickers.includes(t));
     saveWatchlist();
   }
+  // Detect price changes for flash animations
+  const priceChanges = {};
+  for (const ticker of watchlist) {
+    if (data[ticker] && stockData[ticker]) {
+      const oldPrice = stockData[ticker].price;
+      const newPrice = data[ticker].price;
+      if (oldPrice !== newPrice) {
+        priceChanges[ticker] = newPrice > oldPrice ? 'up' : 'down';
+      }
+    }
+  }
+
   stockData = { ...stockData, ...data };
   renderGrid();
   updateMarketStatus();
+
+  // Apply flash micro-animations to cards with changed prices
+  for (const [ticker, dir] of Object.entries(priceChanges)) {
+    const card = document.querySelector(`.stock-card[data-ticker="${ticker}"]`);
+    if (!card) continue;
+    card.classList.add(dir === 'up' ? 'flash-up' : 'flash-down');
+    const priceEl = card.querySelector('.card-price');
+    if (priceEl) priceEl.classList.add(dir === 'up' ? 'price-flash-up' : 'price-flash-down');
+    setTimeout(() => {
+      card.classList.remove('flash-up', 'flash-down');
+      if (priceEl) priceEl.classList.remove('price-flash-up', 'price-flash-down');
+    }, 1200);
+  }
 
   // Update display mode if active
   if (!displayOverlay.classList.contains('hidden')) {

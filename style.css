@@ -35,7 +35,31 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: relative;
 }
+
+/* ===== BLOOMBERG-STYLE GRID BACKGROUND ===== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(78, 168, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(78, 168, 246, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(78, 168, 246, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Ensure content sits above the grid */
+#app-header, #dashboard, .modal, .display-overlay, .toast { position: relative; z-index: 1; }
 
 /* ===== HEADER ===== */
 #app-header {
@@ -103,6 +127,32 @@ body {
 }
 .market-status.open { background: rgba(0, 214, 114, 0.15); color: #2cff8e; }
 .market-status.closed { background: rgba(255, 71, 87, 0.15); color: #ffa3ac; }
+
+/* Pulsing LIVE dot indicator */
+.market-status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+}
+.market-status.open::before {
+  background: #2cff8e;
+  box-shadow: 0 0 4px #2cff8e;
+  animation: livePulse 2s ease-in-out infinite;
+}
+.market-status.closed::before {
+  background: #ffa3ac;
+  opacity: 0.6;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #2cff8e; }
+  50% { opacity: 0.4; box-shadow: 0 0 8px #2cff8e, 0 0 16px rgba(44, 255, 142, 0.3); }
+}
 
 .last-updated {
   font-size: 0.72rem;
@@ -287,20 +337,34 @@ body {
 .stock-card:focus-visible {
   background: linear-gradient(145deg, var(--bg-hover) 0%, rgba(28, 37, 51, 0.9) 100%);
   border-color: var(--text-muted);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.03);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.04);
 }
 .stock-card:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
-.stock-card[data-trend="up"]:hover {
+.stock-card[data-trend="up"]:hover,
+.stock-card[data-trend="up"]:focus-visible {
   border-color: var(--green-dim);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(0, 214, 114, 0.06);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 30px rgba(0, 214, 114, 0.10), inset 0 0 20px rgba(0, 214, 114, 0.03);
 }
-.stock-card[data-trend="down"]:hover {
+.stock-card[data-trend="up"]:hover::before {
+  box-shadow: 0 2px 16px rgba(0, 214, 114, 0.35);
+}
+.stock-card[data-trend="down"]:hover,
+.stock-card[data-trend="down"]:focus-visible {
   border-color: var(--red-dim);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 71, 87, 0.06);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 30px rgba(255, 71, 87, 0.10), inset 0 0 20px rgba(255, 71, 87, 0.03);
+}
+.stock-card[data-trend="down"]:hover::before {
+  box-shadow: 0 2px 16px rgba(255, 71, 87, 0.35);
+}
+/* Sparkline brightens on card hover */
+.stock-card:hover .card-sparkline,
+.stock-card:focus-visible .card-sparkline {
+  filter: brightness(1.4) saturate(1.3);
+  transition: filter 0.3s ease;
 }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -325,7 +389,7 @@ body {
 .card-change.up { color: #e6fff2; background: rgba(0, 214, 114, 0.18); }
 .card-change.down { color: #ffe6e9; background: rgba(255, 71, 87, 0.18); }
 
-.card-sparkline { width: 100%; height: 48px; pointer-events: none; }
+.card-sparkline { width: 100%; height: 48px; pointer-events: none; transition: filter 0.3s ease; }
 
 .card-metrics {
   display: grid;
@@ -600,17 +664,29 @@ body {
   }
 }
 
-/* Price flash animation */
+/* Price flash animation — triggered on data refresh */
 @keyframes flashGreen {
-  0% { background: var(--green-bg); }
-  100% { background: transparent; }
+  0% { background: rgba(0, 214, 114, 0.18); box-shadow: inset 0 0 20px rgba(0, 214, 114, 0.08); }
+  100% { background: transparent; box-shadow: none; }
 }
 @keyframes flashRed {
-  0% { background: var(--red-bg); }
-  100% { background: transparent; }
+  0% { background: rgba(255, 71, 87, 0.18); box-shadow: inset 0 0 20px rgba(255, 71, 87, 0.08); }
+  100% { background: transparent; box-shadow: none; }
 }
-.flash-up { animation: flashGreen 0.8s ease-out; }
-.flash-down { animation: flashRed 0.8s ease-out; }
+.flash-up { animation: flashGreen 1s ease-out; }
+.flash-down { animation: flashRed 1s ease-out; }
+
+/* Price text flash — brief highlight on the price number itself */
+@keyframes priceFlashUp {
+  0% { color: #2cff8e; text-shadow: 0 0 8px rgba(0, 214, 114, 0.5); }
+  100% { color: var(--text-primary); text-shadow: none; }
+}
+@keyframes priceFlashDown {
+  0% { color: #ff6b7a; text-shadow: 0 0 8px rgba(255, 71, 87, 0.5); }
+  100% { color: var(--text-primary); text-shadow: none; }
+}
+.price-flash-up { animation: priceFlashUp 1.2s ease-out; }
+.price-flash-down { animation: priceFlashDown 1.2s ease-out; }
 
 /* ===== DISPLAY PAGINATION ===== */
 .display-pagination {

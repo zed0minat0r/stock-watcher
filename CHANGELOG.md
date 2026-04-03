@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.0 — 2026-04-01
+
+### Visual Energy & Personality Overhaul (Spark)
+- **Card hover effects**: Enhanced lift (4px + scale), color-matched glow (green/red based on trend), sparkline brightens on interaction
+- **Bloomberg-style grid background**: Subtle matrix/grid pattern overlay with soft blue tint — professional terminal aesthetic
+- **Pulsing LIVE indicator**: Animated dot next to market status pulses when market is open; static dot when closed. Status text shows "LIVE" during market hours
+- **Price update micro-animations**: Cards flash with color wash + price text glows briefly when data refreshes with a new price
+- All effects CSS-only where possible, respect `prefers-reduced-motion`, mobile-first
+
 ## v1.6.0 — 2026-04-01
 
 ### QA Bug Fixes: Overflow, Contrast & Chart Modal (Builder)
