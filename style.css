@@ -152,8 +152,8 @@ body {
   position: relative;
 }
 .market-status.open {
-  background: rgba(0, 214, 114, 0.18);
-  color: #2cff8e;
+  background: #0d3326;
+  color: #5cffb0;
   box-shadow: 0 0 12px rgba(0, 214, 114, 0.15);
 }
 .market-status.open::before {
@@ -168,8 +168,8 @@ body {
   vertical-align: middle;
 }
 .market-status.closed {
-  background: rgba(255, 71, 87, 0.18);
-  color: #ffa3ac;
+  background: #3d1520;
+  color: #ffb8bf;
   box-shadow: 0 0 12px rgba(255, 71, 87, 0.1);
 }
 .market-status.closed::before {
@@ -362,8 +362,8 @@ body {
   padding: 10px 16px;
   border-radius: var(--radius);
   border: 1px solid var(--blue);
-  background: var(--blue-bg);
-  color: var(--blue);
+  background: #1a3450;
+  color: #8ec8fb;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 700;
@@ -371,7 +371,7 @@ body {
   min-height: 44px;
   transition: background var(--transition), border-color var(--transition);
 }
-#search-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+#search-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); color: var(--text-primary); }
 
 /* ===== STOCK GRID ===== */
 #dashboard { padding: 20px 24px; max-width: 1440px; margin: 0 auto; }
@@ -488,14 +488,20 @@ body {
 .card-ticker { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.2px; }
 .card-company { font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px; }
 .card-remove {
-  background: none; border: none; color: var(--text-muted); cursor: pointer;
-  font-size: 1rem; padding: 2px 6px; border-radius: 4px; opacity: 0;
-  transition: opacity var(--transition), color var(--transition);
+  background: rgba(0,0,0,0.3); border: none; color: var(--text-secondary); cursor: pointer;
+  font-size: 1rem; padding: 0; border-radius: 50%;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  position: absolute; top: 4px; right: 4px; z-index: 2;
+  opacity: 0;
+  transition: opacity var(--transition), color var(--transition), background var(--transition);
 }
 .stock-card:hover .card-remove,
 .stock-card:focus-within .card-remove { opacity: 1; }
 .card-remove:hover, .card-remove:focus-visible { color: var(--red); background: var(--red-bg); }
 .card-remove:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; opacity: 1; }
+.card-remove:active { color: var(--red); background: var(--red-bg); }
 
 /* ===== CARD PRICE ROW — bigger price, trend arrows ===== */
 .card-price-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -512,8 +518,8 @@ body {
   align-items: center;
   gap: 4px;
 }
-.card-change.up { color: #e6fff2; background: rgba(0, 214, 114, 0.18); }
-.card-change.down { color: #ffe6e9; background: rgba(255, 71, 87, 0.18); }
+.card-change.up { color: #b3ffd9; background: #0d3326; }
+.card-change.down { color: #ffb8bf; background: #3d1520; }
 
 .trend-arrow {
   display: inline-flex;
@@ -627,12 +633,16 @@ body {
   background: var(--bg-primary);
   display: flex; flex-direction: column;
   padding: 20px 30px;
+  overflow: hidden;
+  max-height: 100vh;
+  max-height: 100dvh;
 }
 .display-overlay.hidden { display: none; }
 
 .display-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 .display-header .logo { font-size: 1.8rem; }
 
@@ -656,6 +666,7 @@ body {
   gap: 14px;
   flex: 1;
   min-height: 0;
+  overflow: auto;
 }
 
 .display-card {
@@ -691,8 +702,8 @@ body {
   padding: 4px 14px; border-radius: var(--radius-sm);
   font-variant-numeric: tabular-nums;
 }
-.display-card .d-change.up { color: #e6fff2; background: rgba(0, 214, 114, 0.18); }
-.display-card .d-change.down { color: #ffe6e9; background: rgba(255, 71, 87, 0.18); }
+.display-card .d-change.up { color: #b3ffd9; background: #0d3326; }
+.display-card .d-change.down { color: #ffb8bf; background: #3d1520; }
 .display-card .d-metrics {
   margin-top: 10px; font-size: 0.78rem; color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -701,6 +712,7 @@ body {
 .display-footer {
   display: flex; align-items: center; justify-content: center; gap: 14px;
   padding-top: 14px;
+  flex-shrink: 0;
   color: var(--text-muted); font-size: 0.82rem;
 }
 .display-dots { display: flex; gap: 6px; }
@@ -776,7 +788,7 @@ body {
   .stock-grid { gap: 10px; }
   .stock-card { padding: 16px 14px; text-align: center; align-items: center; }
   .card-top { justify-content: center; text-align: center; flex-direction: column; align-items: center; gap: 4px; position: relative; }
-  .card-top .card-remove { position: absolute; top: 0; right: 0; }
+  .card-top .card-remove { top: -4px; right: -4px; }
   .card-price-row { justify-content: center; }
   .card-metrics { justify-items: center; }
   .card-price { font-size: 1.5rem; }
@@ -788,13 +800,21 @@ body {
   .modal-metric-label { font-size: 0.72rem; }
   #chart-container { height: 260px; }
 
-  .display-overlay { padding: 12px 14px; }
+  .display-overlay { padding: 10px 10px; }
+  .display-header { margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
   .display-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
   }
-  .display-card .d-price { font-size: 2rem; }
-  .display-card .d-ticker { font-size: 1.5rem; }
+  .display-card { padding: 10px 8px; }
+  .display-card .d-price { font-size: 1.6rem; }
+  .display-card .d-ticker { font-size: 1.2rem; }
+  .display-card .d-company { font-size: 0.72rem; }
+  .display-card .d-change { font-size: 0.9rem; padding: 2px 8px; }
+  .display-card .d-metrics { font-size: 0.68rem; }
+  .display-footer { padding-top: 8px; gap: 8px; font-size: 0.75rem; flex-wrap: wrap; }
+  #exit-display-btn { padding: 6px 12px; font-size: 0.8rem; }
 
   .modal-close-btn {
     min-width: 44px;
@@ -869,27 +889,11 @@ body {
   min-width: 60px; text-align: center;
 }
 
-/* ===== MOBILE: always show remove as compact X in top-right ===== */
+/* ===== MOBILE: always show remove button (no hover needed) ===== */
 @media (hover: none), (pointer: coarse) {
   .card-remove {
     opacity: 1;
-    font-size: 1rem;
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    z-index: 2;
-    color: var(--text-secondary);
-    background: rgba(0,0,0,0.3);
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
   }
-  .card-remove:active { color: var(--red); background: var(--red-bg); }
 }
 
 /* ===== PREFERS REDUCED MOTION ===== */

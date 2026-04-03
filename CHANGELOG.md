@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.3.0 — 2026-04-01
+
+### Builder — QA Critical Fixes (Mobile + Contrast)
+- **Chart modal fix**: `openModal()` no longer silently fails when `stockData` is empty for a ticker. Now fetches data on demand with a loading toast, so mobile card taps always open the chart.
+- **Display mode mobile layout**: Exit button and footer no longer overflow below viewport on 375px screens. Overlay uses `overflow: hidden` with `100dvh` max-height, footer is `flex-shrink: 0`, and display cards scale down properly on small screens.
+- **Remove button 44px everywhere**: Removed the touch-only media query for button sizing. Remove buttons are now always 44×44px with absolute positioning, visible on hover/focus on desktop and always visible on touch devices.
+- **Contrast fixes (WCAG)**: Market status badges, "+ Add" button, and change badges now use opaque backgrounds instead of transparent `rgba()`. "Market Closed" badge improved from 1.76:1 to ~7:1, "+ Add" from 1.00:1 to ~5:1, change badges from ~1.84:1 to ~7:1+.
+
 ## v2.2.0 — 2026-04-01
 
 ### Spark — Ambient Glow Cards

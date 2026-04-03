@@ -519,9 +519,20 @@ let modalChart = null;
 
 let _lastFocusedElement = null;
 
-function openModal(ticker) {
-  const d = stockData[ticker];
-  if (!d) return;
+async function openModal(ticker) {
+  let d = stockData[ticker];
+  if (!d) {
+    // Data may not be loaded yet — try fetching on demand
+    showToast(`Loading ${ticker} data...`);
+    const fetched = await fetchStockData([ticker]);
+    if (fetched[ticker]) {
+      stockData[ticker] = fetched[ticker];
+      d = stockData[ticker];
+    } else {
+      showToast(`Could not load data for ${ticker}`, true);
+      return;
+    }
+  }
   const up = isUp(d.change);
   currentModalTicker = ticker;
   _lastFocusedElement = document.activeElement;
