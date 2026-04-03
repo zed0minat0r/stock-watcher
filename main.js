@@ -113,33 +113,60 @@ async function fetchStockData(tickers) {
 }
 
 /**
- * Finnhub API — fetch quote for each ticker
- * Endpoint: /quote?symbol=AAPL&token=KEY
+ * Finnhub API — fetch quote + basic metrics for each ticker
+ * Quote endpoint:   /quote?symbol=AAPL&token=KEY
+ * Metric endpoint:  /stock/metric?symbol=AAPL&metric=all&token=KEY
  */
 async function fetchFromFinnhub(tickers) {
   const results = {};
-  // Fetch in parallel, respecting rate limits
   const promises = tickers.map(async (ticker) => {
-    const url = `${API_CONFIG.baseUrl}/quote?symbol=${ticker}&token=${API_CONFIG.finnhubKey}`;
+    const quoteUrl  = `${API_CONFIG.baseUrl}/quote?symbol=${encodeURIComponent(ticker)}&token=${API_CONFIG.finnhubKey}`;
+    const metricUrl = `${API_CONFIG.baseUrl}/stock/metric?symbol=${encodeURIComponent(ticker)}&metric=all&token=${API_CONFIG.finnhubKey}`;
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const q = await res.json();
+      // Fetch quote and metrics in parallel
+      const [qRes, mRes] = await Promise.all([
+        fetch(quoteUrl,  { signal: AbortSignal.timeout(8000) }),
+        fetch(metricUrl, { signal: AbortSignal.timeout(8000) }),
+      ]);
+      if (!qRes.ok) throw new Error(`HTTP ${qRes.status}`);
+      const q = await qRes.json();
       // Finnhub returns { c: current, d: change, dp: pct, h: high, l: low, o: open, pc: prevClose, t: timestamp }
       if (q && q.c && q.c > 0) {
+        // Parse metrics (volume, 52w range, market cap) if available
+        let vol    = FALLBACK_DATA[ticker]?.volume || 0;
+        let cap    = FALLBACK_DATA[ticker]?.cap    || 0;
+        let high52 = FALLBACK_DATA[ticker]?.high52 || q.h;
+        let low52  = FALLBACK_DATA[ticker]?.low52  || q.l;
+
+        if (mRes.ok) {
+          try {
+            const m = await mRes.json();
+            const mm = m?.metric || {};
+            // 52-week high/low
+            if (mm['52WeekHigh'])  high52 = mm['52WeekHigh'];
+            if (mm['52WeekLow'])   low52  = mm['52WeekLow'];
+            // Market cap: Finnhub reports in millions on free tier
+            if (mm['marketCapitalization']) cap = mm['marketCapitalization'] * 1e6;
+            // Volume: use 10-day avg or last close volume
+            if (mm['10DayAverageTradingVolume']) vol = Math.round(mm['10DayAverageTradingVolume'] * 1e6);
+            else if (mm['3MonthAverageTradingVolume']) vol = Math.round(mm['3MonthAverageTradingVolume'] * 1e6);
+          } catch {}
+        }
+
         results[ticker] = {
           name: COMPANY_NAMES[ticker] || ticker,
           price: q.c,
           change: q.d || 0,
           pct: q.dp || 0,
-          volume: FALLBACK_DATA[ticker]?.volume || 0,  // Finnhub free /quote doesn't include volume
-          cap: FALLBACK_DATA[ticker]?.cap || 0,
-          high52: FALLBACK_DATA[ticker]?.high52 || q.h,
-          low52: FALLBACK_DATA[ticker]?.low52 || q.l,
+          volume: vol,
+          cap,
+          high52,
+          low52,
           dayHigh: q.h,
           dayLow: q.l,
           open: q.o,
           prevClose: q.pc,
+          liveMetrics: true,  // flag so UI can mark these as real data
         };
       }
     } catch (err) {
@@ -439,6 +466,7 @@ function renderGrid() {
         <div class="card-metric"><span class="card-metric-label">52w H</span><span class="card-metric-value">${formatPrice(d.high52)}</span></div>
         <div class="card-metric"><span class="card-metric-label">52w L</span><span class="card-metric-value">${formatPrice(d.low52)}</span></div>
       </div>
+      ${d.liveMetrics ? '<div class="card-live-badge" title="All metrics sourced live from Finnhub">&#11044; live data</div>' : ''}
     `;
 
     // Click card -> detail chart
@@ -504,6 +532,48 @@ function renderSparkline(ticker) {
   });
   // Fetch real historical data for sparkline (30 days)
   sparklineCharts[ticker] = chart;
+  fetchCandleData(ticker, 30, 'sparkline').then(data => {
+    if (data && data.length > 0) {
+      series.setData(data);
+      chart.timeScale().fitContent();
+    }
+  });
+}
+
+/**
+ * Render a mini sparkline inside a display mode card.
+ */
+function renderDisplaySparkline(ticker) {
+  const el = document.getElementById(`dspark-${ticker}`);
+  if (!el || !window.LightweightCharts) return;
+  el.innerHTML = '';
+  const d = stockData[ticker];
+  if (!d) return;
+  const up = isUp(d.change);
+
+  const chart = LightweightCharts.createChart(el, {
+    width: el.clientWidth || 200,
+    height: 48,
+    layout: { background: { type: 'solid', color: 'transparent' }, textColor: 'transparent' },
+    grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+    crosshair: { mode: 0 },
+    rightPriceScale: { visible: false },
+    timeScale: { visible: false },
+    handleScroll: false,
+    handleScale: false,
+  });
+
+  const series = chart.addAreaSeries({
+    lineColor: up ? 'rgba(0,214,114,0.9)' : 'rgba(255,71,87,0.9)',
+    topColor:    up ? 'rgba(0,214,114,0.2)' : 'rgba(255,71,87,0.2)',
+    bottomColor: 'transparent',
+    lineWidth: 2,
+    crosshairMarkerVisible: false,
+    priceLineVisible: false,
+    lastValueVisible: false,
+  });
+
+  displaySparklineCharts[ticker] = chart;
   fetchCandleData(ticker, 30, 'sparkline').then(data => {
     if (data && data.length > 0) {
       series.setData(data);
@@ -606,6 +676,8 @@ function renderModalChart(ticker, days) {
     if (data && data.length > 0 && modalChart) {
       candleSeries.setData(data);
       modalChart.timeScale().fitContent();
+      // --- Accessibility: generate sr-only text summary of the chart ---
+      generateChartA11ySummary(ticker, days, data);
     }
   });
 
@@ -648,6 +720,44 @@ function renderModalChart(ticker, days) {
   };
   window.addEventListener('resize', onResize);
   modal._resizeHandler = onResize;
+}
+
+/**
+ * Generate an accessible screen-reader-only text summary of the chart.
+ * Injected as a sr-only element inside #chart-wrap.
+ */
+function generateChartA11ySummary(ticker, days, data) {
+  const wrap = document.getElementById('chart-wrap');
+  if (!wrap || !data || data.length === 0) return;
+
+  // Remove existing summary
+  const existing = wrap.querySelector('.chart-a11y-summary');
+  if (existing) existing.remove();
+
+  const first = data[0];
+  const last  = data[data.length - 1];
+  const highs = data.map(d => d.high);
+  const lows  = data.map(d => d.low);
+  const periodHigh = Math.max(...highs).toFixed(2);
+  const periodLow  = Math.min(...lows).toFixed(2);
+  const overallChange = last.close - first.open;
+  const overallPct    = first.open !== 0
+    ? ((overallChange / first.open) * 100).toFixed(2)
+    : '0.00';
+  const dir    = overallChange >= 0 ? 'up' : 'down';
+  const sign   = overallChange >= 0 ? '+' : '';
+  const label  = days <= 5 ? '1-week' : days <= 30 ? '1-month' : days <= 90 ? '3-month' : days <= 180 ? '6-month' : '1-year';
+
+  const summary = document.createElement('div');
+  summary.className = 'chart-a11y-summary sr-only';
+  summary.setAttribute('aria-live', 'polite');
+  summary.textContent =
+    `${ticker} ${label} chart: opened at $${first.open.toFixed(2)} on ${first.time}, ` +
+    `closed at $${last.close.toFixed(2)} on ${last.time}. ` +
+    `Period high $${periodHigh}, low $${periodLow}. ` +
+    `Overall change ${sign}$${Math.abs(overallChange).toFixed(2)} (${sign}${overallPct}%), trend ${dir}.`;
+
+  wrap.appendChild(summary);
 }
 
 function closeModal() {
@@ -702,6 +812,7 @@ $('#chart-timerange').addEventListener('click', (e) => {
 let displayClockInterval = null;
 let displayPage = 0;
 const DISPLAY_PAGE_SIZE = 8;
+let displaySparklineCharts = {};   // ticker -> chart instance for display mode
 
 function enterDisplayMode() {
   displayIndex = 0;
@@ -732,6 +843,9 @@ function exitDisplayMode() {
   document.body.style.overflow = '';
   if (displayInterval) { clearInterval(displayInterval); displayInterval = null; }
   if (displayClockInterval) { clearInterval(displayClockInterval); displayClockInterval = null; }
+  // Clean up display sparklines
+  Object.values(displaySparklineCharts).forEach(c => { try { c.remove(); } catch {} });
+  displaySparklineCharts = {};
 
   // Exit fullscreen
   try {
@@ -774,10 +888,21 @@ function renderDisplayGrid() {
       <div class="d-company">${d.name}</div>
       <div class="d-price" style="color:${up ? 'var(--green)' : 'var(--red)'}">${formatPrice(d.price)}</div>
       <div class="d-change ${up ? 'up' : 'down'}">${formatChange(d.change, d.pct)}</div>
+      <div class="d-sparkline" id="dspark-${ticker}"></div>
       <div class="d-metrics">Vol ${vol} &middot; Cap ${mcap}</div>
     `;
     dg.appendChild(card);
   }
+
+  // Render sparklines inside display cards after DOM paint
+  requestAnimationFrame(() => {
+    // Clean up old display sparklines
+    Object.values(displaySparklineCharts).forEach(c => { try { c.remove(); } catch {} });
+    displaySparklineCharts = {};
+    for (const ticker of shown) {
+      renderDisplaySparkline(ticker);
+    }
+  });
 
   // Navigation dots
   const dots = $('#display-dots');
