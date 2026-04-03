@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.3.0 — 2026-04-01
+
+### Mobile UX, Search Autocomplete & Data Integrity (Builder)
+- **Fix: Mobile remove button** — Always visible on touch devices as a compact circular X in
+  the top-right corner of each stock card (no hover required)
+- **Feature: Search autocomplete** — As you type in the search bar, a dropdown of matching
+  stocks appears using Finnhub's /search endpoint. Supports keyboard navigation (arrow keys,
+  Enter to select, Escape to close). Falls back to exact ticker input if API fails.
+- **Fix: Fake ticker handling** — Unknown/invalid tickers no longer generate fabricated data.
+  Instead, an error toast ("Ticker not found") is shown and the ticker is not added to the
+  watchlist. Existing unknown tickers are silently cleaned from the watchlist on refresh.
+
 ## v1.2.0 — 2026-04-01
 
 ### Accessibility & Display Mode Refinements (Refiner)

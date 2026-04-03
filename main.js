@@ -737,11 +737,108 @@ function removeTicker(ticker) {
 
 searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
+  hideAutocomplete();
   const val = searchInput.value.trim();
   if (val) {
     addTicker(val);
     searchInput.value = '';
   }
+});
+
+// =========================================================
+//  SEARCH AUTOCOMPLETE — Finnhub /search endpoint
+// =========================================================
+const autocompleteDropdown = $('#search-autocomplete');
+let acDebounceTimer = null;
+let acHighlightIdx = -1;
+let acResults = [];
+
+async function searchAutocomplete(query) {
+  if (!query || query.length < 1) { hideAutocomplete(); return; }
+  try {
+    const url = `${API_CONFIG.baseUrl}/search?q=${encodeURIComponent(query)}&token=${API_CONFIG.finnhubKey}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json && json.result && json.result.length > 0) {
+      acResults = json.result
+        .filter(r => r.type === 'Common Stock' || r.type === 'ETP' || r.type === 'ADR' || !r.type)
+        .slice(0, 8)
+        .map(r => ({ symbol: r.symbol, name: r.description || r.symbol }));
+      if (acResults.length > 0) {
+        showAutocomplete();
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Autocomplete search failed:', err.message);
+  }
+  hideAutocomplete();
+}
+
+function showAutocomplete() {
+  acHighlightIdx = -1;
+  autocompleteDropdown.innerHTML = acResults.map((r, i) =>
+    `<div class="search-autocomplete-item" data-idx="${i}" data-symbol="${r.symbol}">
+      <span class="ac-symbol">${r.symbol}</span>
+      <span class="ac-name">${r.name}</span>
+    </div>`
+  ).join('');
+  autocompleteDropdown.classList.add('visible');
+}
+
+function hideAutocomplete() {
+  autocompleteDropdown.classList.remove('visible');
+  acResults = [];
+  acHighlightIdx = -1;
+}
+
+function selectAutocompleteItem(symbol) {
+  hideAutocomplete();
+  searchInput.value = '';
+  addTicker(symbol);
+}
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(acDebounceTimer);
+  const val = searchInput.value.trim();
+  if (!val) { hideAutocomplete(); return; }
+  acDebounceTimer = setTimeout(() => searchAutocomplete(val), 250);
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (!autocompleteDropdown.classList.contains('visible')) return;
+  const items = autocompleteDropdown.querySelectorAll('.search-autocomplete-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acHighlightIdx = Math.min(acHighlightIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('highlighted', i === acHighlightIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acHighlightIdx = Math.max(acHighlightIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('highlighted', i === acHighlightIdx));
+  } else if (e.key === 'Enter' && acHighlightIdx >= 0 && acHighlightIdx < acResults.length) {
+    e.preventDefault();
+    e.stopPropagation();
+    selectAutocompleteItem(acResults[acHighlightIdx].symbol);
+  } else if (e.key === 'Escape') {
+    hideAutocomplete();
+  }
+});
+
+autocompleteDropdown.addEventListener('click', (e) => {
+  const item = e.target.closest('.search-autocomplete-item');
+  if (item) {
+    selectAutocompleteItem(item.dataset.symbol);
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!searchForm.contains(e.target)) hideAutocomplete();
+});
+
+searchInput.addEventListener('blur', () => {
+  setTimeout(hideAutocomplete, 200);
 });
 
 $('#refresh-btn').addEventListener('click', () => {
