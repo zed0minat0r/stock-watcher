@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.2.0 — 2026-04-01
+
+### Spark — Ambient Glow Cards
+- **Ambient Trend Glow**: Stock cards now emit a subtle color-matched halo — green for stocks that are up, red for down. Creates a premium "ambient light" effect beneath each card.
+- **Breathing Pulse Animation**: Gentle 4-second breathing cycle on the ambient glow makes the dashboard feel alive with real-time data. Animation pauses on hover for a clean interaction.
+- **Enhanced Hover Glow**: Hover state now features a deeper, wider color glow (32px + 64px spread) for a more immersive feel when interacting with cards.
+- **CSS-Only**: Pure CSS implementation — no JS changes, no performance impact. Respects `prefers-reduced-motion`.
+
 ## v2.1.0 — 2026-04-01
 
 ### Refiner — Chart Crosshair, Accessibility & Polish
