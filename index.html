@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockPulse — Market Dashboard</title>
+  <meta name="description" content="Real-time stock market dashboard with charts, watchlist, and display mode.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header id="app-header">
+    <div class="header-left">
+      <h1 class="logo"><span class="logo-icon">&#9670;</span> StockPulse</h1>
+      <span class="market-status" id="market-status"></span>
+    </div>
+    <div class="header-center">
+      <form id="search-form" autocomplete="off">
+        <input type="text" id="search-input" placeholder="Add ticker (e.g. AAPL)" maxlength="10" aria-label="Search for a stock ticker">
+        <button type="submit" id="search-btn">+ Add</button>
+      </form>
+    </div>
+    <div class="header-right">
+      <span class="last-updated" id="last-updated"></span>
+      <button id="refresh-btn" title="Refresh data">&#8635;</button>
+      <button id="display-mode-btn" title="Display mode (fullscreen)">&#9974;</button>
+    </div>
+  </header>
+
+  <!-- Main dashboard -->
+  <main id="dashboard">
+    <div id="stock-grid" class="stock-grid"></div>
+  </main>
+
+  <!-- Detail chart modal -->
+  <div id="chart-modal" class="modal hidden" role="dialog" aria-label="Stock detail">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <h2 id="modal-ticker"></h2>
+          <span id="modal-company"></span>
+        </div>
+        <button id="modal-close" class="modal-close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="modal-metrics" class="modal-metrics"></div>
+      <div id="chart-timerange" class="chart-timerange">
+        <button class="tr-btn active" data-days="5">1W</button>
+        <button class="tr-btn" data-days="30">1M</button>
+        <button class="tr-btn" data-days="90">3M</button>
+        <button class="tr-btn" data-days="180">6M</button>
+        <button class="tr-btn" data-days="365">1Y</button>
+      </div>
+      <div id="chart-container"></div>
+    </div>
+  </div>
+
+  <!-- Display mode overlay -->
+  <div id="display-overlay" class="display-overlay hidden">
+    <div class="display-header">
+      <h1 class="logo"><span class="logo-icon">&#9670;</span> StockPulse</h1>
+      <div class="display-controls">
+        <span class="market-status" id="display-market-status"></span>
+        <span id="display-clock"></span>
+        <button id="exit-display-btn">&#10005; Exit</button>
+      </div>
+    </div>
+    <div id="display-grid" class="display-grid"></div>
+    <div class="display-footer">
+      <span id="display-rotate-label">Auto-rotating every 10s</span>
+      <div id="display-dots" class="display-dots"></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
