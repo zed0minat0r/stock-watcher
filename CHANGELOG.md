@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.5.1 — 2026-04-01
+
+### Display Mode Card Transitions (Spark)
+- **Smooth active-card transitions**: Display mode cards now animate smoothly between active states with 0.6s eased transitions on border, glow, scale, background, and opacity — resolves AUDIT finding of "instant class swap"
+- **Breathing glow animation**: Active display card has a subtle 3s pulsing glow that cycles between soft and bright blue, giving the highlighted card a living, premium feel
+- **Inactive card dim**: Non-active display cards fade to 75% opacity, creating clear visual hierarchy and focus on the currently highlighted stock
+- **Enhanced navigation dots**: Active page dot now scales up 1.4x with a blue glow halo, matching the card's premium glow treatment
+- All animations respect `prefers-reduced-motion` via existing media query
+
 ## v1.5.0 — 2026-04-01
 
 ### Mobile Header Collapse & Touch UX Audit (Pixel)
