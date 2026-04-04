@@ -1,9 +1,9 @@
-# StockPulse — SIXTH AUDIT v6 (Nigel)
+# StockPulse — SEVENTH AUDIT v7 (Nigel)
 **Date:** 2026-04-03
 **Auditor:** Nigel (Strict Auditor)
 **Live Site:** https://zed0minat0r.github.io/stock-watcher/
 **Perspectives:** Mobile (375px) + Desktop/Display Mode
-**Previous Audits:** v1: 5.4 | v2: 6.3 | v3: 6.9 | v4: 7.2 | v5: 7.4
+**Previous Audits:** v1: 5.4 | v2: 6.3 | v3: 6.9 | v4: 7.2 | v5: 7.4 | v6: 7.4
 
 ---
 
@@ -16,120 +16,118 @@
 
 ---
 
-## What Changed Since v5 (7.4)
+## What Changed Since v6 (7.4)
 
-Two commits landed after the v5 audit:
+Four commits landed after the v6 audit. All three v6 top priorities were addressed:
 
-1. **`fix: mobile alignment, live tape indices, volume bars on chart`** — Addressed v5 mobile alignment notes. Ticker tape now fetches live ETF quotes (SPY/DIA/QQQ/IWM) from Finnhub on load and refreshes every 60s. Volume histogram series added to the modal candlestick chart (`addHistogramSeries` with `priceScaleId: 'volume'` at 80% top margin, 20% opacity directional coloring). Mobile remove button (`@media hover:none`) now always visible via `opacity:1`.
+1. **`fix: kill ambient breathing animations, add static tape badges, mobile UX fixes`** — Removed `ambientPulseGreen` and `ambientPulseRed` from stock cards. The `livePulse` continuous animation was also removed from price elements (now a comment `/* Continuous livePulse removed; price updates use flash-up/flash-down instead */`). Static tape items now show an `[est]` badge. Mobile UX fixes included.
 
-2. **`feat: sort/filter toolbar, portfolio summary strip, keyboard nav in display mode`** — Adds a sort/filter toolbar (Default, Top Gainers, Top Losers, Price ↓, A–Z) above the grid. Adds a portfolio summary strip (gainer/loser count, best/worst ticker). Arrow-key navigation in display mode (left/right/up/down cycle cards). Keyboard shortcut `r` to refresh, `f` to enter display mode.
+2. **`Fix: move remove button to top-right corner of card, not card-top`** — The `card-remove` button is now `position: absolute; top: 4px; right: 4px` rather than inside card-top flex flow. Correct — removes a layout jitter on hover.
 
-These directly addressed v5 priorities #1 (sort/filter), #2 (portfolio summary), and partially #3 (live tape).
+3. **`v2.4.0 — Replace static tape items with live ETFs, add tape pause button (WCAG 2.2.2), and watchlist slot counter`** — The entire ticker tape is now 8 live ETF symbols (`SPY`, `DIA`, `QQQ`, `IWM`, `GLD`, `USO`, `UUP`, `VIXY`) fetched from Finnhub on load and refreshed every 60s. A pause/play button was added at the right edge of the tape (WCAG 2.2.2 compliance). A watchlist slot counter (`X/20`) was added to the dashboard toolbar.
+
+4. **`Dead code removal`** — Unused CSS block, dead JS variable, and no-op class calls removed.
+
+These changes directly addressed v6 Priority 1 (breathing animations), Priority 2 (stale tape data), and Priority 3 (tape pause button).
 
 ---
 
 ## Category Scores
 
-### 1. Visual Design — 7.3/10
-The dark Bloomberg-inspired theme remains the strongest asset. The green/red gradient accent bars on cards, the dot-grid background, ambient glow animations, and the gradient brand logo all feel cohesive and deliberately crafted. The ticker tape with fade edges is a nice finishing touch.
+### 1. Visual Design — 7.6/10
 
-**What pulls it back from higher:**
-- The card entrance animation (`cardSlideUp`) only has hardcoded delays for 8 cards (nth-child 1–8). Cards 9+ all enter simultaneously with no stagger — obvious on large watchlists.
-- The "live pulse" animation on prices (`livePulse` at 2.5s) pulsing opacity is distracting after the novelty wears off. Real trading apps (Bloomberg, Robinhood) flash *once* on update, then stop. Continuous pulsing is visual noise.
-- `ambientPulseGreen/Red` — every single card continuously breathes its box-shadow. On a grid of 8 cards all breathing at 4s out-of-phase, it creates visual chaos. This is a design regression introduced in v2 that has never been addressed.
-- No light mode. Not required but limits audience.
-- Volume bars in the modal chart are barely visible (20% opacity). Users will not notice they exist.
+The removal of ambient breathing animations is the most impactful change this cycle. Cards no longer continuously pulse their box-shadow — the grid is now calm and readable. The flash-up/flash-down animations fire only on actual price changes. This is exactly how Bloomberg Terminal and Robinhood handle it. Visual maturity improved meaningfully.
 
-### 2. Mobile UX (375px) — 7.0/10
-Significantly improved over previous audits. The centered card layout works. The search drawer (toggle button → expand) is correct for mobile. The 44px minimum touch targets are implemented throughout. The always-visible remove button on touch devices is properly handled via `@media (hover: none)`.
+The dot-grid background, gradient accent bars, OHLC tooltip, and logo gradient remain strong. The `cardSlideUp` entrance animation still staggers cards nicely (20 nth-child delays defined, which now covers the full max watchlist size of 20).
 
 **Remaining issues:**
-- The sort toolbar at 375px wraps onto two lines (5 buttons: Default, Top Gainers, Top Losers, Price ↓, A–Z). At small widths, "Top Gainers" and "Top Losers" are too wide to fit 2-per-row cleanly. This creates an unbalanced, awkward wrap.
-- Portfolio summary on mobile hides the "Best" and "Worst" stock items (`.ps-item.ps-best, .ps-item.ps-worst { display: none }`). The strip then reads "3 gainers · 5 losers" with no further context. The most valuable info (which stock led) is hidden on the device most users will view this on.
-- Modal chart height is 260px on mobile. That's acceptable but tight for a candlestick chart — OHLC wicks become very small.
-- The ticker tape at 375px (`font-size: 0.76rem; padding: 0 14px`) is readable but shows only ~2 items at once. At 30s animation, the user waits a while to see all indices. No ability to pause or manually scroll.
-- Search input `font-size: 16px` is correct (prevents iOS zoom) — good.
+- The logo icon (`&#9670;`) pulse (`logoPulse` animation: scale 1→1.15, opacity fade, drop-shadow) still runs continuously at 2s. It's small and subtle — acceptable, but it is still a perpetual breathing animation. The market status badge also has `statusPulse` continuously. These are lower priority than the card animations but noted.
+- The `card-live-badge` ("● live data") is `font-size: 0.62rem` and `opacity: 0.75` — very easy to miss. Trust indicators should be more prominent.
+- No light mode. Not a blocker but limits daytime use on bright screens.
+- Volume bars in modal chart are still at 20% opacity (`rgba(0,214,114,0.20)` / `rgba(255,71,87,0.20)`). Users who have not been told to look for them will not register them.
 
-### 3. Desktop/Display Mode — 7.5/10
-Display mode is the most differentiated feature of this app — it genuinely separates StockPulse from generic dashboards. The 4×2 grid, fullscreen support, auto-rotation with glow highlight, live clock, and keyboard nav all work well together.
+### 2. Mobile UX (375px) — 7.2/10
 
-**Issues:**
-- Display mode always shows a 4×2 grid regardless of how many stocks are in the watchlist. With the default 8 tickers it fills perfectly. With 5 tickers, there are 3 empty grid cells — visually broken.
-- The `grid-template-rows: repeat(2, 1fr)` is hardcoded. This means with 4 stocks there are 4 empty half-height rows. The grid should use `auto-fit` or adjust rows dynamically.
-- Display card price uses `color:var(--green)` or `color:var(--red)` inline style on the price (`d-price`), but the company name is `var(--text-secondary)`. This is fine but the price domination of color is slightly redundant with the trend accent bar. 
-- Pagination (for >8 stocks) is present and tested — good.
-- Keyboard arrows work. The hint (`← →`) is shown on desktop — good. Hidden on mobile correctly.
-- The auto-rotation label "Auto-rotating every 10s" is accurate. The display footer is clean.
+Improved over v6's 7.0. The `@media (hover: none)` rule correctly keeps remove buttons visible on touch devices. The search drawer pattern (toggle button → expand) is correct. 44px minimum touch targets are maintained. The centered card layout with 1-column stack works well at 375px.
 
-### 4. Charts — 7.2/10
-Real Finnhub candlestick data via `/stock/candle` with 5-minute resolution for 1W and daily resolution for longer periods. The 5-timerange selector (1W/1M/3M/6M/1Y) works. Crosshair OHLC tooltip is clean and well-positioned. Volume histogram is now present.
+The watchlist slot counter (`X/20`) added in v2.4.0 now appears in the toolbar — this is visible on mobile and addresses a v6 bonus note.
 
-**Issues:**
-- Volume bars at `rgba(78,168,246,0.2)` (20% blue opacity) are nearly invisible. A user casually looking at the chart will not notice them. Standard convention is green/red at ~25–35% opacity. The code does set directional color correctly (`rgba(0,214,114,0.20)` / `rgba(255,71,87,0.20)`) but the opacity is too low.
-- The 1W chart uses 15-minute candles. For a 5-day period, this means ~130 candles — reasonable. However for 1Y (`days=365`), the API call window is `now - 365*86400` to `now`. Finnhub free tier rate limits may cause silent failures for large date ranges, falling back to `_generateFallbackCandles()` without user feedback.
-- Chart tooltip positioning: when hovering near the left edge of the chart, the tooltip jumps between right and left side based on `x > containerRect.width / 2` — this is correct logic but the threshold is the center, meaning for the left 50% of the chart the tooltip always appears to the right, potentially overlapping the candles. Should anchor to cursor proximity from the right edge instead.
-- No option to view as a line chart vs candlestick. This is a common user preference.
-- Sparklines: `fetchCandleData(ticker, 30, 'sparkline')` fires for every card on render. With 8 default tickers that's 8 API calls on load, in addition to 8 quote+metric calls (16 API calls) and 4 tape calls — 28 total Finnhub requests on first load. Free tier is 60 calls/minute but this is high.
+**Remaining issues:**
+- The sort toolbar at 375px still wraps awkwardly. While `data-mobile-label` is used to shorten button labels ("Gainers" instead of "Top Gainers"), the buttons still wrap to multiple lines at 375px because there are 5 buttons plus "Sort by" label. A `<select>` dropdown on mobile would be cleaner.
+- Portfolio summary still hides `ps-item.ps-best` and `ps-item.ps-worst` on small screens (`display: none` implied by earlier CSS — actually looking again, v6 CSS at line 1097 shows `.ps-item.ps-best, .ps-item.ps-worst { display: inline-flex; }` which keeps them visible). On re-inspection this appears corrected: best/worst tickers ARE shown on mobile. The separator hiding (`ps-sep:nth-of-type(n+3) { display: none }`) reduces clutter. This is better than the v6 assessment suggested.
+- Modal chart is 260px height on mobile. Tight but functional for OHLC candlesticks.
+- Ticker tape pause button is present (`position: absolute; right: 0`) and accessible. On mobile at 375px the button occupies right edge with `padding: 0 12px 0 24px`. It does not interfere with tape readability.
+
+### 3. Desktop/Display Mode — 7.6/10
+
+Display mode remains the most differentiated feature. No regressions. The sparkline charts inside display cards work. Auto-rotation with keyboard nav (arrows) is polished. Pagination for >8 stocks is in place.
+
+**Remaining issue:**
+- Display grid is still hardcoded `grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr)`. With fewer than 8 stocks the grid has empty cells. This is a visual issue that has persisted since v4. At 5 tickers in a 4×2 grid, there are 3 empty grey-bordered cells. A user testing with a small watchlist will notice this looks broken. The fix is straightforward: either use `auto-fit` or calculate grid columns dynamically based on `watchlist.length`.
+- `role="region"` is on the display overlay — good. But no `aria-label` is set on the display overlay element in the HTML. This was raised in v6 and remains unaddressed.
+- Display card price is colored inline (`style="color:var(--green)"`) — minor but inline styles reduce maintainability.
+
+### 4. Charts — 7.3/10
+
+No chart changes since v6. The Finnhub candlestick integration, 5-timerange selector, and crosshair OHLC tooltip remain solid. Score bumped from 7.2 to 7.3 because the overall app quality uplift means the chart features look more professional in context now that the card animations have been removed.
+
+**Unchanged issues:**
+- Volume bars at 20% opacity are still barely visible. Standard convention is 25–35%.
+- No line chart option. Candlestick-only is limiting for 1Y views where daily candle bodies are very small.
+- Tooltip flip threshold is chart center rather than cursor proximity to right edge — minor positioning annoyance.
+- API rate limit risk from sparkline calls on initial load (28 total requests) remains.
 
 ### 5. Search & Navigation — 7.5/10
-The autocomplete via Finnhub `/search` is a genuine differentiator. The 250ms debounce is correct. ARIA combobox role, `aria-expanded`, `aria-activedescendant` — all properly implemented. The "/" keyboard shortcut to focus search is a power-user feature that feels professional.
 
-**Issues:**
-- The autocomplete filters for `Common Stock`, `ETP`, `ADR`, and `!type`. But Finnhub returns many XETRA/OTC duplicates for the same ticker (e.g. AAPL appears as AAPL, AAPL.BA, AAPL.BE). Users who type "AAPL" see duplicate entries. No deduplication by symbol.
-- Adding a ticker that already has live data but is not in `FALLBACK_DATA` shows "Looking up..." then fetches — this is correct behavior. But the search input stays blank if the ticker is invalid, with no indication of what was rejected beyond a toast. Toasts disappear in 2.5s and users on slow connections may miss the error.
-- The watchlist cap (20 tickers) has no visual indicator of how many slots remain. At 18/20 users get no warning until they hit the wall.
-- No way to reorder the watchlist. Drag-to-reorder is a standard expectation for watchlists.
+No changes to search since v6. The autocomplete, debounce, ARIA combobox, and keyboard shortcuts remain solid. Score unchanged.
 
-### 6. Data Quality — 6.8/10
-The data quality situation is structurally sound but has trust issues a real user would notice.
+**Unchanged issues:**
+- Autocomplete still shows duplicate symbols from different exchanges (AAPL, AAPL.BA, AAPL.BE). No deduplication by symbol.
+- Invalid ticker errors are only communicated via a toast that disappears in 2.5s.
+- No drag-to-reorder for watchlist items. This is a standard user expectation.
 
-**Issues:**
-- The fallback data (`FALLBACK_DATA`) dates from the original build. Prices like TSLA at $271.30, NVDA at $118.62 are ~6 months stale if the API fails. A user on a corporate firewall or with an exhausted API key will silently see old prices with a "Sample data - HH:MM" timestamp. The distinction between live and fallback is only visible in the tiny "● live data" badge — easy to miss.
-- The tape still includes VIX at 16.82, DXY at 104.28, Gold at 2345.80, Crude at 78.42 — hardcoded statics that never update. These are in the "live" ticker tape. Users who know these markets will immediately spot stale VIX or gold prices. There's no "static" indicator to differentiate these from the live ETF entries.
-- `formatBigNumber` is called on `cap` but Finnhub returns market cap in millions. The code multiplies by `1e6` — correct. But `formatBigNumber` then checks `>= 1e12` for T, `>= 1e9` for B, etc. For AAPL at ~$3.28T this should display correctly. Verified in code — this is fine.
-- Volume formatting: on initial load before live data, `getFallbackData` pre-formats volume as a string (`formatBigNumber(base.volume)`). Live data stores raw numbers. The UI handles both via the `typeof d.volume === 'string'` check — correct but fragile. Adding a new ticker with live data would double-format if this check fails.
-- No pre/after-hours price data. Robinhood and Yahoo Finance show extended hours prices prominently. This is a notable absence for serious users.
+### 6. Data Quality — 7.0/10
 
-### 7. Performance — 6.5/10
-The app works but the API call volume is a real concern.
+Improved from v6's 6.8. The ticker tape is now fully live ETF data — no more stale VIX/DXY/Gold/Crude hardcodes in the tape. The `[est]` badge on fallback items gives users a clear signal when data is estimated. This is a genuine quality improvement.
 
-**Issues:**
-- On first load: 8 quote calls + 8 metric calls + 4 tape calls + 8 sparkline calls = **28 API requests**. Finnhub free tier is 60/minute. If the user has >8 tickers, they approach the limit immediately.
-- Sparkline data is cached (`_candleCache` with 5-min TTL) — good. But the cache is in-memory and lost on every page refresh. Every hard refresh triggers the full 28-call burst.
-- `loadAndRender()` is called every 60 seconds (`REFRESH_INTERVAL`). Each call fires 8 quote + 8 metric calls = 16 more. Plus sparklines re-render (but hit cache for 5 min). This is sustainable but means 16 API calls/minute sustained — 960/hour on a free tier of 60/minute. This would cause API errors for active users.
-- The `LightweightCharts` library is loaded from `unpkg.com` CDN with `defer`. No SRI hash, no local fallback. If unpkg is down the entire app is broken.
-- No service worker or offline support. Expected for a v1 app, noted for completeness.
-- `will-change: transform` on the ticker tape is correct. `backdrop-filter: blur(16px)` on the header and `blur(8px)` on cards may cause performance issues on low-end Android devices — not catastrophic but noted.
-
-### 8. Accessibility — 7.3/10
-The accessibility implementation is clearly deliberate and above average for a solo project.
-
-**Strengths:**
-- Skip-to-content link present and functional.
-- ARIA combobox on search with full keyboard navigation.
-- Focus trap in modal (Tab/Shift+Tab wrap).
-- Focus return to triggering element on modal close.
-- `role="dialog"` on modal, `role="radiogroup"` on sort buttons and time range.
-- `aria-live="polite"` on stock grid and portfolio summary.
-- `prefers-reduced-motion` properly kills all animations and stops ticker tape.
-- Screen-reader chart summary (`generateChartA11ySummary`) is a standout feature.
-- All icon buttons have `aria-label`.
-- 44px minimum touch targets throughout.
+All 8 tape items now fetch from Finnhub (`TAPE_ETF_SYMBOLS = ['SPY', 'DIA', 'QQQ', 'IWM', 'GLD', 'USO', 'UUP', 'VIXY']`). `GLD` proxies gold, `USO` proxies oil, `UUP` proxies the dollar index, `VIXY` proxies VIX. These are legitimate ETF proxies and the labels correctly identify them as such ("Gold", "Oil", "US Dollar", "VIX Proxy").
 
 **Remaining issues:**
-- The sort buttons use `role="radio"` and `aria-checked` but are inside a `role="radiogroup"`. Radio group semantics expect only one item checked at a time — this is correctly implemented. However, pressing Space on a radio button should select it (like a real radio). Currently only click is wired. Keyboard `Space` fires the `keydown` on the card (which opens the modal for stock cards) — the sort buttons themselves would only respond to `Enter` or `click`.
-- The display overlay has no `role` attribute and no `aria-label`. Screen reader users entering display mode have no context.
-- `aria-label="Stock detail"` on the modal is generic. It should include the ticker name (set dynamically when modal opens).
-- The ticker tape (`aria-label="Market indices ticker tape"`) contains scrolling text but no mechanism to pause it (WCAG 2.1 SC 2.2.2 requires users to be able to pause moving content). The `prefers-reduced-motion` handles this for users with that preference set, but there's no visible pause button for others.
+- `FALLBACK_DATA` prices (TSLA at $271.30, NVDA at $118.62, etc.) are still months-stale. A user on a corporate firewall who sees fallback data will see materially wrong prices. The "Sample data - HH:MM" timestamp helps but the gap between real and sample price could be 30–40% on volatile tickers like NVDA.
+- No pre/after-hours price data. Robinhood and Yahoo Finance surface extended hours prominently. For a finance dashboard this is a notable absence.
+- Live vs. fallback differentiation: the `card-live-badge` is present but very small and low contrast. Consider a more prominent status indicator.
 
-### 9. Overall App Feel — 7.2/10
-StockPulse is now genuinely good. The combination of real API data, the display mode feature, the animated ticker tape, OHLC charts with crosshair tooltips, live portfolio summary, and sort toolbar puts it solidly above "generic template." A real user encountering this for the first time would be impressed.
+### 7. Performance — 6.5/10
 
-**What prevents it from being an 8.0:**
-- The relentless breathing animations (cards, logo, market status) create visual fatigue. A polished app uses motion purposefully — to signal state change, not as ambient decoration.
-- The data trust gap: mixing stale hardcoded fallback data (VIX/DXY/Gold/Oil in the tape, FALLBACK_DATA prices that are 6+ months old) with "live" data labeling is a credibility problem. A finance user who spots an obviously wrong VIX reading stops trusting everything.
-- No watchlist persistence beyond localStorage. On a shared computer or private browsing, the default 8 tickers reset — fine. But there's no export/import, no URL sharing of a watchlist.
-- The app has no onboarding — a first-time user doesn't know to press `/` for search, `f` for display mode, `r` to refresh. A tooltip or keyboard shortcut hint somewhere would elevate the UX.
+No performance changes since v6. The API call count remains elevated: 8 quote + 8 metric + 8 sparkline + 8 tape = **32 requests on first load** (tape expanded from 4 to 8 ETFs, adding 4 more calls vs. v6). Each 60s refresh is 16 calls (main) + 8 tape. Score unchanged — the situation is no worse but the tape expansion makes it slightly higher.
+
+**Issues:**
+- First-load request count is now ~32 Finnhub API calls. Free tier is 60/minute. With 12+ tickers in the watchlist this would approach the limit instantly.
+- `LightweightCharts` loaded from unpkg CDN with no SRI hash. App breaks if CDN is unavailable.
+- No service worker, no caching beyond in-memory `_candleCache` (reset on hard refresh).
+- `backdrop-filter: blur(16px)` on header + `blur(8px)` on cards can impact low-end Android devices.
+
+### 8. Accessibility — 7.5/10
+
+Improved from v6's 7.3. The tape pause button directly addresses WCAG 2.1 SC 2.2.2 (pause, stop, hide for moving content). The button correctly toggles `animationPlayState`, updates `aria-label` on state change, and shows a visual indicator. This resolves the only actual WCAG violation cited in v6.
+
+**Remaining issues:**
+- Display overlay: HTML has `role="region"` but `aria-label` attribute is set in the HTML markup but says `"StockPulse Display Mode — fullscreen market dashboard"` — actually checking the HTML this IS present on line 85: `role="region" aria-label="StockPulse Display Mode — fullscreen market dashboard"`. This was incorrectly flagged in v6; it IS labeled. Correcting the record.
+- Sort buttons: `role="radio"` + `aria-checked` are correctly set, but keyboard Space on a focused sort button may not fire because the card's `keydown` listener intercepts Space for opening modals. The sort buttons are not inside cards, so this is not actually a conflict — they are separate DOM elements. This is fine.
+- Modal `aria-label` is updated dynamically in `openModal()`: `modal.setAttribute('aria-label', \`${ticker} — ${d.name} Stock Detail\`)`. Correcting the v6 mis-report — this WAS already done in the code.
+- The one genuine remaining gap: the `chart-a11y-summary` SR-only div is appended inside `#chart-wrap` but removed and re-appended on each timerange change without an explicit `aria-live="assertive"`. Using `polite` may cause screen readers to miss the update if the user is currently reading. Minor.
+
+### 9. Overall App Feel — 7.5/10
+
+The removal of the ambient breathing animations is the single highest-impact change this project has ever shipped. The grid now feels calm, professional, and information-dense — closer to Bloomberg Terminal than a student portfolio project. Combined with the fully live ticker tape, pause button, watchlist counter, and remove button positioning fix, this is a meaningfully more polished experience than v6.
+
+A real user encountering this app would feel they're using something deliberately crafted. The dark theme, gradient accents, real OHLC charts, autocomplete search, and display mode together create a differentiated product.
+
+**What prevents it from reaching 8.0:**
+- The display grid empty cell issue (fewer than 8 stocks = visually broken layout) is immediately apparent on first exploration.
+- API reliability: a user on a restricted network gets stale fallback data silently. There is no retry UI or "using cached data" banner.
+- Onboarding: keyboard shortcuts (`/`, `f`, `r`) are undiscoverable. A first-time user will use only click/tap and miss major features.
+- No watchlist sharing or export. The app is personal-device-only by design — fine, but it limits how users advocate for it.
 
 ---
 
@@ -143,32 +141,33 @@ StockPulse is now genuinely good. The combination of real API data, the display 
 | v4    | 2026-03-xx | 7.2   | Ticker tape, OHLC crosshair, mobile polish |
 | v5    | 2026-04-03 | 7.4   | Live metrics, display sparklines, range bar, dot grid bg |
 | v6    | 2026-04-03 | 7.4   | Sort toolbar, portfolio summary, keyboard nav, volume bars, live tape |
+| v7    | 2026-04-03 | 7.5   | Kill breathing animations, fully live tape ETFs, tape pause (WCAG 2.2.2), watchlist counter |
 
 ---
 
-## Overall Score: 7.4 / 10
+## Overall Score: 7.5 / 10
 
-The score holds at 7.4. The new features (sort toolbar, portfolio summary, live tape ETFs, volume bars, keyboard nav) are all real improvements. However, the score doesn't advance because the same core problems from v4–v5 remain unresolved: the ambient breathing animations causing visual noise, stale hardcoded fallback prices mixed into "live" displays, and the ticker tape's unchecked WCAG pause requirement. The app is iterating horizontally (adding features) instead of vertically (fixing quality issues that prevent trust).
+Up from 7.4. The three priorities were executed correctly and the impact is real — particularly the breathing animation removal, which is the highest-ROI code change since the Finnhub integration. The app is now measurably more professional. The score advances but does not reach 7.7+ because the display grid empty cell bug, API overload risk, and onboarding gap remain unresolved, and no new differentiated feature was shipped.
 
 ---
 
-## Top 3 Priorities for v7
+## Top 3 Priorities for v8
 
-### Priority 1: Kill the Ambient Breathing Animations
-Remove `ambientPulseGreen` and `ambientPulseRed` from stock cards. Replace `livePulse` (continuous opacity fade) on prices with a one-shot flash when the price actually changes — which is already implemented as `flash-up` / `flash-down` / `price-flash-up` / `price-flash-down`. The logo pulse and market status pulse can stay (they're small and meaningful). Every other card breathing on an infinite loop is visual noise that makes the app feel less professional, not more. This single change would raise the Visual Design and Overall Feel scores.
+### Priority 1: Fix the Display Mode Grid Empty Cells
+When the watchlist has fewer than 8 stocks, the 4×2 hardcoded display grid shows empty cells with visible borders. This is a first-impression UX failure for any user exploring the app with a small watchlist. Fix: calculate grid columns dynamically in JS (`Math.ceil(Math.sqrt(count))` or a lookup table for 1–8 items), or use CSS `grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))` and remove the fixed rows. Target: at 4 tickers show a 2×2 grid; at 6 tickers show a 3×2 grid; at 8 show 4×2.
 
-### Priority 2: Fix the Stale Static Data in the Ticker Tape
-VIX, DXY, Gold, and Crude Oil in the ticker tape are hardcoded and never update. Either: (a) remove them from the tape entirely and only show the 4 live ETFs, or (b) add a clear "Static" label/style to distinguish them from live items (opposite of the green dot), or (c) replace with additional ETFs that can be fetched live (GLD for gold, USO for oil, UUP for dollar, VIXY for VIX proxy). The current state — stale data presented alongside live data with no differentiation — is a credibility issue for a finance app.
+### Priority 2: Add a Keyboard Shortcut Discovery Panel
+The `/`, `f`, and `r` shortcuts are power-user features that most first-time users will never discover. Add a small `?` icon button in the header (or a tooltip on the display mode button) that opens a simple keyboard shortcut overlay. Alternatively, a single dismissible onboarding card at the top of the grid on first visit (stored in localStorage so it only shows once) would surface these features without being obtrusive. This has zero API cost and directly increases perceived quality.
 
-### Priority 3: Add a Ticker Tape Pause Button (WCAG 2.2.2)
-WCAG 2.1 Success Criterion 2.2.2 requires that users can pause, stop, or hide moving content that lasts more than 5 seconds. The ticker tape scrolls indefinitely. The `prefers-reduced-motion` media query handles screen-reader and reduced-motion users but doesn't cover all users. Add a small pause/play button at the right edge of the ticker tape wrapper. This resolves an actual accessibility violation (not just a best practice) and also improves usability for users who want to read a specific index value without it scrolling away.
+### Priority 3: Reduce First-Load API Footprint
+32 Finnhub requests on first load is too many for the free tier (60/min). Solutions in order of impact: (a) Defer sparkline fetches — render the grid first with placeholder sparkline areas, then fetch sparklines 500ms after initial render. (b) Batch the 8 tape ETF requests after main stock data completes. (c) Cache sparkline data in localStorage with a 10-minute TTL (survives hard refresh for quick revisits). Any one of these would reduce the burst from 32 to ~16 requests and make the app reliable for users with 10+ tickers.
 
 ---
 
 ## Bonus Notes (Lower Priority)
 
-- **Sort button wrapping on mobile:** The 5 sort buttons wrap awkwardly at 375px. Consider collapsing to a `<select>` dropdown on mobile, or reduce button labels ("Gainers" instead of "Top Gainers").
-- **API rate limit risk:** 28 requests on first load approaches Finnhub's 60/minute free tier limit. Consider batching sparkline fetches with a 100ms stagger, or deferring sparklines until after the main grid renders.
-- **Autocomplete deduplication:** Filter autocomplete results to unique symbols only (many tickers appear for multiple exchanges).
-- **Watchlist slot counter:** Show remaining watchlist capacity (e.g., "14/20") somewhere near the search bar.
-- **Onboarding tooltip:** A single dismissible banner on first visit explaining `/` for search, `f` for display mode would add polish.
+- **Fallback data staleness:** Update `FALLBACK_DATA` prices quarterly or add a warning banner when fallback mode activates ("Live data unavailable — showing recent estimates").
+- **Volume bar opacity:** Raise from 20% to 30% in the modal chart. The directional coloring (green up/red down) is already correct; just increase visibility.
+- **Autocomplete deduplication:** Filter autocomplete results to unique `.symbol` values to remove XETRA/OTC duplicates.
+- **Line chart toggle:** Add a candlestick/line toggle button in the modal timerange bar. Useful for 1Y views where individual candle bodies become too small to distinguish.
+- **Logo pulse:** `logoPulse` and `statusPulse` are the last continuous breathing animations. They are small and contextually meaningful (logo identity, market state). Keep but consider making them optional under `prefers-reduced-motion` explicitly (they may already be caught by the global motion override — they are, checked).
