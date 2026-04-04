@@ -225,23 +225,16 @@ body {
   position: relative;
   height: 38px;
 }
-.ticker-tape-wrapper::before,
-.ticker-tape-wrapper::after {
+.ticker-tape-wrapper::before {
   content: '';
   position: absolute;
   top: 0;
   bottom: 0;
+  left: 0;
   width: 40px;
   z-index: 2;
   pointer-events: none;
-}
-.ticker-tape-wrapper::before {
-  left: 0;
   background: linear-gradient(90deg, var(--bg-primary), transparent);
-}
-.ticker-tape-wrapper::after {
-  right: 0;
-  background: linear-gradient(270deg, var(--bg-primary), transparent);
 }
 
 .ticker-tape {
@@ -306,6 +299,32 @@ body {
   vertical-align: middle;
   opacity: 0.7;
   text-transform: uppercase;
+}
+
+/* ===== TICKER TAPE PAUSE BUTTON (WCAG 2.2.2) ===== */
+.tape-pause-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  background: linear-gradient(270deg, var(--bg-primary) 55%, transparent 100%);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 12px 0 24px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition);
+  letter-spacing: -1px;
+}
+.tape-pause-btn:hover { color: var(--text-primary); }
+.tape-pause-btn.playing { color: var(--green); }
+.tape-pause-btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
 }
 
 /* ===== AUTOCOMPLETE DROPDOWN ===== */
@@ -471,6 +490,31 @@ body {
 }
 .sort-btn:hover { border-color: var(--text-muted); color: var(--text-primary); background: var(--bg-hover); }
 .sort-btn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+
+/* ===== WATCHLIST SLOT COUNTER ===== */
+.watchlist-counter {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 9px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+.watchlist-counter.counter-warn {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(240, 178, 50, 0.08);
+}
+.watchlist-counter.counter-full {
+  color: var(--red);
+  border-color: var(--red-dim);
+  background: var(--red-bg);
+}
 
 .stock-grid {
   display: grid;
@@ -1026,6 +1070,7 @@ body {
   .dashboard-toolbar { gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
   .sort-btns { gap: 5px; flex-wrap: wrap; }
   .sort-btn { padding: 5px 8px; font-size: 0.72rem; min-height: 32px; }
+  .watchlist-counter { margin-left: 0; font-size: 0.7rem; padding: 3px 7px; }
   /* Shorten "Top Gainers"/"Top Losers" → "Gainers"/"Losers" via content override */
   .sort-btn[data-mobile-label] { font-size: 0; }
   .sort-btn[data-mobile-label]::after { content: attr(data-mobile-label); font-size: 0.72rem; }

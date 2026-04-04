@@ -36,6 +36,7 @@
   <!-- Market Summary Ticker Tape -->
   <div class="ticker-tape-wrapper" id="ticker-tape-wrapper" aria-label="Market indices ticker tape">
     <div class="ticker-tape" id="ticker-tape"></div>
+    <button class="tape-pause-btn" id="tape-pause-btn" aria-label="Pause ticker tape" title="Pause ticker tape">&#9646;&#9646;</button>
   </div>
 
   <!-- Main dashboard -->
@@ -50,6 +51,7 @@
         <button class="sort-btn" data-sort="price-desc" data-mobile-label="Price ↓" role="radio" aria-checked="false">Price ↓</button>
         <button class="sort-btn" data-sort="alpha" data-mobile-label="A–Z" role="radio" aria-checked="false">A–Z</button>
       </div>
+      <span class="watchlist-counter" id="watchlist-counter" aria-live="polite" aria-label="Watchlist capacity"></span>
     </div>
     <div id="stock-grid" class="stock-grid" aria-live="polite" aria-relevant="additions removals"></div>
   </main>

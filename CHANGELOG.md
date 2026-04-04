@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.4.0 — 2026-04-03
+
+### Builder + Spark — UI/UX Polish (Audit v7 Priorities)
+
+**Priority 1 — Ticker tape credibility (static data removed)**
+- Replaced non-updating VIX, DXY, Gold (GC=F), and Crude Oil (CL=F) with live-fetchable ETF proxies: GLD (Gold), USO (Oil), UUP (US Dollar), VIXY (VIX Proxy). All 8 ticker tape items now update every 60 seconds from Finnhub. Fallback values included for offline mode. Eliminates the stale-data-presented-as-live credibility issue flagged in the audit.
+
+**Priority 2 — Ticker tape pause button (WCAG 2.2.2)**
+- Added a pause/play button at the right edge of the ticker tape wrapper, resolving WCAG 2.1 SC 2.2.2 (pause, stop, or hide moving content). Button uses `animationPlayState` to freeze the scroll; turns green when active (paused). Right-side gradient fade now lives on the button itself to avoid z-index conflicts. Full keyboard focus ring included.
+
+**Priority 3 — Watchlist slot counter**
+- Added a live `N/20` slot counter to the dashboard toolbar (right-aligned). Counter turns amber at 16+/20 and red at full. Updates on every add/remove via `updateWatchlistCounter()`. Includes `aria-live="polite"` for screen reader announcements.
+
+**Spark — Mobile center-alignment audit**
+- Confirmed all card elements center-aligned on mobile: card-top, price-row, metrics, range labels, live badge. Counter styling adjusted for small screens (no margin-left auto on mobile).
+
 ## v2.3.0 — 2026-04-01
 
 ### Builder — QA Critical Fixes (Mobile + Contrast)

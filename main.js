@@ -9,19 +9,27 @@ const REFRESH_INTERVAL = 60_000;        // 1 min
 const DISPLAY_ROTATE_INTERVAL = 10_000; // 10 sec
 
 // ---- MARKET INDICES FOR TICKER TAPE ----
-// Fetchable ETF proxies: SPY (S&P 500), DIA (Dow), QQQ (Nasdaq), IWM (Russell 2000)
-// Non-fetchable (Finnhub free tier): VIX, DXY, Gold, Crude — kept as static fallback
-const TAPE_ETF_SYMBOLS = ['SPY', 'DIA', 'QQQ', 'IWM'];
-const TAPE_ETF_LABELS  = { SPY: 'S&P 500', DIA: 'Dow Jones', QQQ: 'Nasdaq', IWM: 'Russell 2000' };
+// All 8 are Finnhub-fetchable ETF proxies — no static non-updating items
+const TAPE_ETF_SYMBOLS = ['SPY', 'DIA', 'QQQ', 'IWM', 'GLD', 'USO', 'UUP', 'VIXY'];
+const TAPE_ETF_LABELS  = {
+  SPY:  'S&P 500',
+  DIA:  'Dow Jones',
+  QQQ:  'Nasdaq',
+  IWM:  'Russell 2000',
+  GLD:  'Gold',
+  USO:  'Oil',
+  UUP:  'US Dollar',
+  VIXY: 'VIX Proxy',
+};
 const MARKET_INDICES_FALLBACK = [
-  { symbol: 'SPY',  label: 'S&P 500',      price: 5672.80, change: 18.42,  pct: 0.33  },
+  { symbol: 'SPY',  label: 'S&P 500',      price: 5672.80,  change: 18.42,  pct:  0.33 },
   { symbol: 'DIA',  label: 'Dow Jones',     price: 42156.30, change: -52.70, pct: -0.13 },
-  { symbol: 'QQQ',  label: 'Nasdaq',        price: 19823.45, change: 95.12,  pct: 0.48  },
-  { symbol: 'IWM',  label: 'Russell 2000',  price: 2078.60, change: -8.35,  pct: -0.40 },
-  { symbol: 'VIX',  label: 'VIX',           price: 16.82,   change: -0.45,  pct: -2.61 },
-  { symbol: 'DXY',  label: 'US Dollar',     price: 104.28,  change: 0.18,   pct: 0.17  },
-  { symbol: 'GC=F', label: 'Gold',          price: 2345.80, change: 12.60,  pct: 0.54  },
-  { symbol: 'CL=F', label: 'Crude Oil',     price: 78.42,   change: -0.86,  pct: -1.08 },
+  { symbol: 'QQQ',  label: 'Nasdaq',        price: 19823.45, change: 95.12,  pct:  0.48 },
+  { symbol: 'IWM',  label: 'Russell 2000',  price: 2078.60,  change: -8.35,  pct: -0.40 },
+  { symbol: 'GLD',  label: 'Gold',          price: 218.40,   change: 1.08,   pct:  0.50 },
+  { symbol: 'USO',  label: 'Oil',           price: 73.85,    change: -0.62,  pct: -0.83 },
+  { symbol: 'UUP',  label: 'US Dollar',     price: 28.92,    change: 0.05,   pct:  0.17 },
+  { symbol: 'VIXY', label: 'VIX Proxy',     price: 14.21,    change: -0.38,  pct: -2.60 },
 ];
 // Live tape data — populated by fetchLiveTapeData()
 let _liveTapeIndices = null;
@@ -523,8 +531,21 @@ function renderPortfolioSummary() {
 // =========================================================
 //  RENDERING — Stock Card Grid
 // =========================================================
+function updateWatchlistCounter() {
+  const counter = document.getElementById('watchlist-counter');
+  if (!counter) return;
+  const used = watchlist.length;
+  const max = 20;
+  counter.textContent = `${used}/${max}`;
+  counter.title = `${used} of ${max} watchlist slots used`;
+  counter.setAttribute('aria-label', `Watchlist: ${used} of ${max} slots used`);
+  counter.classList.toggle('counter-full', used >= max);
+  counter.classList.toggle('counter-warn', used >= 16 && used < max);
+}
+
 function renderGrid() {
   renderPortfolioSummary();
+  updateWatchlistCounter();
   if (watchlist.length === 0) {
     grid.innerHTML = `<div class="empty-state"><h3>No stocks in your watchlist</h3><p>Use the search bar to add tickers.</p></div>`;
     return;
@@ -1405,9 +1426,7 @@ async function fetchLiveTapeData() {
         };
       })
     );
-    // Merge live ETF results with static non-fetchable items (VIX, DXY, Gold, Oil)
-    const staticItems = MARKET_INDICES_FALLBACK.filter(i => !TAPE_ETF_SYMBOLS.includes(i.symbol));
-    return [...results, ...staticItems];
+    return results;
   } catch (err) {
     console.warn('Live tape fetch failed, using static data:', err.message);
     return null;
@@ -1443,3 +1462,27 @@ async function refreshTape() {
 refreshTape();
 // Refresh ticker tape data every 60 seconds (align with main data refresh)
 setInterval(refreshTape, 60_000);
+
+// ---- TICKER TAPE PAUSE / PLAY (WCAG 2.2.2) ----
+(function initTapePause() {
+  const pauseBtn = document.getElementById('tape-pause-btn');
+  const tape = document.getElementById('ticker-tape');
+  if (!pauseBtn || !tape) return;
+  let paused = false;
+  pauseBtn.addEventListener('click', () => {
+    paused = !paused;
+    if (paused) {
+      tape.style.animationPlayState = 'paused';
+      pauseBtn.textContent = '\u25B6'; // play triangle
+      pauseBtn.setAttribute('aria-label', 'Play ticker tape');
+      pauseBtn.title = 'Play ticker tape';
+      pauseBtn.classList.add('playing');
+    } else {
+      tape.style.animationPlayState = 'running';
+      pauseBtn.innerHTML = '&#9646;&#9646;'; // pause bars
+      pauseBtn.setAttribute('aria-label', 'Pause ticker tape');
+      pauseBtn.title = 'Pause ticker tape';
+      pauseBtn.classList.remove('playing');
+    }
+  });
+})();
